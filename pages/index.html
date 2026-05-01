@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Telco Churn Predictor — Vincentius Leonanda</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0f14;
+      --bg2: #13161d;
+      --bg3: #1a1e28;
+      --border: rgba(255,255,255,0.07);
+      --accent: #4fffb0;
+      --accent2: #38bdf8;
+      --text: #e8eaf0;
+      --muted: #6b7280;
+      --danger: #f87171;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* ── NOISE OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.4;
+    }
+
+    .container { max-width: 860px; margin: 0 auto; padding: 0 2rem; position: relative; z-index: 1; }
+
+    /* ── HEADER ── */
+    header {
+      padding: 5rem 0 4rem;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+
+    .eyebrow {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .eyebrow::before {
+      content: '';
+      display: block;
+      width: 32px;
+      height: 1px;
+      background: var(--accent);
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.2rem, 5vw, 3.4rem);
+      line-height: 1.15;
+      font-weight: 700;
+      margin-bottom: 1.2rem;
+      background: linear-gradient(135deg, #fff 40%, #6b7280);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      font-size: 1rem;
+      color: var(--muted);
+      max-width: 520px;
+      margin-bottom: 2rem;
+    }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .pill {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+    .pill.green { border-color: rgba(79,255,176,0.3); color: var(--accent); }
+    .pill.blue  { border-color: rgba(56,189,248,0.3); color: var(--accent2); }
+
+    /* ── SECTION ── */
+    section { padding: 3.5rem 0; border-bottom: 1px solid var(--border); }
+    section:last-of-type { border-bottom: none; }
+
+    .section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+    }
+
+    h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: #fff;
+    }
+
+    p { color: #9ca3af; margin-bottom: 1rem; font-size: 0.95rem; }
+    p:last-child { margin-bottom: 0; }
+
+    /* ── STAT GRID ── */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 1.5rem;
+    }
+
+    .stat {
+      background: var(--bg2);
+      padding: 1.4rem 1.2rem;
+    }
+
+    .stat-value {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      color: #fff;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: 'DM Mono', monospace;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── REASON CARDS ── */
+    .reason-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 1.5rem;
+    }
+
+    .reason-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.1rem 1.2rem;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      transition: border-color 0.2s;
+    }
+    .reason-card:hover { border-color: rgba(79,255,176,0.2); }
+
+    .reason-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+      margin-top: 7px;
+    }
+
+    .reason-text { font-size: 0.88rem; color: #9ca3af; }
+
+    /* ── TABLE ── */
+    .table-wrap {
+      margin-top: 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    thead tr {
+      background: var(--bg3);
+    }
+
+    th {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 10px 16px;
+      text-align: left;
+      font-weight: 400;
+    }
+
+    td {
+      padding: 11px 16px;
+      font-size: 0.875rem;
+      color: #9ca3af;
+      border-top: 1px solid var(--border);
+    }
+
+    tr.winner td { background: rgba(79,255,176,0.04); color: #e8eaf0; }
+    tr.winner td:first-child { color: var(--accent); font-weight: 500; }
+
+    .badge-best {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(79,255,176,0.12);
+      color: var(--accent);
+      border: 1px solid rgba(79,255,176,0.2);
+      margin-left: 6px;
+      vertical-align: middle;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── INFERENCE TABLE ── */
+    .inf-row td:nth-child(4) { font-family: 'DM Mono', monospace; font-size: 12px; }
+    .correct { color: var(--accent) !important; }
+    .wrong   { color: var(--danger) !important; }
+
+    /* ── PIPELINE ── */
+    .pipeline {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-top: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .pipe-step {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .pipe-arrow {
+      font-size: 12px;
+      color: var(--border);
+      padding: 0 6px;
+    }
+
+    /* ── FEATURE TABLE ── */
+    .feat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 1.5rem;
+    }
+
+    .feat-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+    }
+
+    .feat-name {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--accent2);
+      margin-bottom: 4px;
+    }
+
+    .feat-desc { font-size: 0.82rem; color: var(--muted); }
+
+    /* ── INSIGHT GRID ── */
+    .insight-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 1.5rem;
+    }
+
+    .insight-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.2rem;
+    }
+
+    .insight-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem;
+      color: #fff;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .insight-desc { font-size: 0.83rem; color: var(--muted); }
+
+    /* ── TUNING STEPS ── */
+    .tuning-list { margin-top: 1.5rem; }
+
+    .tuning-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+    }
+    .tuning-item:last-child { border-bottom: none; }
+
+    .tuning-name { font-size: 0.9rem; color: #9ca3af; }
+
+    .tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    .tag-up   { background: rgba(79,255,176,0.1);  color: var(--accent); border: 1px solid rgba(79,255,176,0.2); }
+    .tag-down { background: rgba(248,113,113,0.1); color: var(--danger); border: 1px solid rgba(248,113,113,0.2); }
+
+    /* ── BUTTONS ── */
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 2rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-decoration: none;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+      cursor: pointer;
+    }
+
+    .btn-github {
+      background: #fff;
+      color: #0d0f14;
+      border-color: #fff;
+    }
+    .btn-github:hover { background: #e8eaf0; }
+
+    .btn-colab {
+      background: #F9AB00;
+      color: #0d0f14;
+      border-color: #F9AB00;
+    }
+    .btn-colab:hover { background: #e09c00; }
+
+    .btn-notebook {
+      background: transparent;
+      color: var(--accent2);
+      border-color: rgba(56,189,248,0.3);
+    }
+    .btn-notebook:hover { background: rgba(56,189,248,0.08); border-color: var(--accent2); }
+
+    .btn-results {
+      background: transparent;
+      color: var(--accent);
+      border-color: rgba(79,255,176,0.3);
+    }
+    .btn-results:hover { background: rgba(79,255,176,0.08); border-color: var(--accent); }
+
+    .btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+    /* ── CHARTS ── */
+    .chart-wrap {
+      margin-top: 1.5rem;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+
+    .chart-title {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1.2rem;
+    }
+
+    /* Donut Chart */
+    .donut-wrap {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .donut-svg { flex-shrink: 0; }
+
+    .donut-legend { display: flex; flex-direction: column; gap: 10px; }
+
+    .legend-item { display: flex; align-items: center; gap: 10px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .legend-label { font-size: 13px; color: #9ca3af; }
+    .legend-val { font-family: 'DM Mono', monospace; font-size: 13px; color: #fff; margin-left: auto; padding-left: 20px; }
+
+    /* Bar Chart */
+    .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+
+    .bc-row { display: flex; align-items: center; gap: 12px; }
+    .bc-label { font-size: 12px; color: #9ca3af; width: 120px; flex-shrink: 0; font-family: 'DM Mono', monospace; }
+    .bc-track { flex: 1; background: rgba(255,255,255,0.05); border-radius: 4px; height: 28px; overflow: hidden; position: relative; }
+    .bc-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 10px; transition: width 1s ease; }
+    .bc-val { font-family: 'DM Mono', monospace; font-size: 11px; color: #0d0f14; font-weight: 500; }
+    .bc-winner .bc-fill { background: linear-gradient(90deg, #4fffb0, #38bdf8); }
+    .bc-normal .bc-fill { background: rgba(255,255,255,0.12); }
+    .bc-normal .bc-val { color: #9ca3af; }
+
+    /* Confidence Chart */
+    .conf-chart { display: flex; flex-direction: column; gap: 8px; }
+    .conf-row { display: flex; align-items: center; gap: 10px; }
+    .conf-no { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); width: 20px; flex-shrink: 0; }
+    .conf-track { flex: 1; background: rgba(255,255,255,0.05); border-radius: 4px; height: 22px; overflow: hidden; }
+    .conf-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 8px; }
+    .conf-fill.correct { background: rgba(79,255,176,0.25); border: 1px solid rgba(79,255,176,0.3); }
+    .conf-fill.wrong   { background: rgba(248,113,113,0.25); border: 1px solid rgba(248,113,113,0.3); }
+    .conf-val { font-family: 'DM Mono', monospace; font-size: 10px; }
+    .conf-val.correct { color: var(--accent); }
+    .conf-val.wrong   { color: var(--danger); }
+    .conf-threshold { border-left: 2px dashed rgba(255,255,255,0.2); position: absolute; top: 0; bottom: 0; }
+
+    /* ── FOOTER ── */
+    footer {
+      padding: 2.5rem 0;
+      text-align: center;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+
+    footer a { color: var(--accent2); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    header, section {
+      animation: fadeUp 0.6s ease both;
+    }
+    section:nth-of-type(1) { animation-delay: 0.1s; }
+    section:nth-of-type(2) { animation-delay: 0.15s; }
+    section:nth-of-type(3) { animation-delay: 0.2s; }
+    section:nth-of-type(4) { animation-delay: 0.25s; }
+    section:nth-of-type(5) { animation-delay: 0.3s; }
+    section:nth-of-type(6) { animation-delay: 0.35s; }
+
+    @media (max-width: 600px) {
+      .stat-grid    { grid-template-columns: 1fr 1fr; }
+      .reason-grid  { grid-template-columns: 1fr; }
+      .feat-grid    { grid-template-columns: 1fr; }
+      .insight-grid { grid-template-columns: 1fr; }
+      .pipeline     { gap: 4px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- HEADER -->
+  <header>
+    <div class="eyebrow">Laporan Proyek ML</div>
+    <h1>Prediksi Churn<br>Pelanggan Telco</h1>
+    <p class="subtitle">Memprediksi pelanggan telekomunikasi yang kemungkinan akan berhenti berlangganan menggunakan model machine learning berbasis Tree keputusan dengan hyperparameter tuning dan threshold optimization.</p>
+    <div class="meta-row">
+      <span class="pill green">XGBoost</span>
+      <span class="pill green">Random Forest</span>
+      <span class="pill blue">ROC-AUC 0.8486</span>
+      <span class="pill">Kaggle Dataset</span>
+      <span class="pill">7.043 Pelanggan</span>
+    </div>
+    <div class="btn-row">
+      <a href="https://github.com/leonanda1013/Telco-Customer-Churn" target="_blank" class="btn btn-github">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12"/></svg>
+        GitHub Repo
+      </a>
+      <a href="https://colab.research.google.com/drive/1P6bHGzgmOqUHoy_H9luvrDya_DGe5fSm?usp=sharing" target="_blank" class="btn btn-colab">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.9 4.8C14.3 2.2 10.5 1.4 7.1 2.7L10 5.6c2-.5 4.2 0 5.7 1.5 2.3 2.3 2.3 6.1 0 8.5-1.5 1.5-3.6 2-5.6 1.6l-3 3c3.5 1.2 7.3.4 9.9-2.2 3.4-3.5 3.4-9.1-.1-12.2zM7.1 16.5c-2.3-2.3-2.3-6.1 0-8.5 1.5-1.5 3.6-2 5.6-1.6l3-3C12.2 2.2 8.4 3 5.8 5.6 2.3 9.1 2.3 14.7 5.8 17.8c2.6 2.6 6.4 3.4 9.8 2.1l-2.9-2.9c-2 .5-4.3 0-5.6-1.5z"/></svg>
+        Buka di Colab
+      </a>
+      <a href="https://www.kaggle.com/datasets/blastchar/telco-customer-churn" target="_blank" class="btn btn-notebook">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Lihat Dataset
+      </a>
+
+    </div>
+  </header>
+
+  <!-- DATASET -->
+  <section>
+    <div class="section-label">01 — Dataset</div>
+    <h2>Telco Customer Churn</h2>
+    <p>Dataset diambil dari <a href="https://www.kaggle.com/datasets/blastchar/telco-customer-churn" style="color:var(--accent2)">Kaggle</a>. Berisi data demografis dan perilaku penggunaan dari 7.043 pelanggan telekomunikasi. Variabel target menunjukkan apakah pelanggan berhenti berlangganan dalam satu bulan terakhir.</p>
+    <p>Tantangan utama: ketidakseimbangan kelas sedang (73/27). Model yang selalu memprediksi "tidak churn" bisa mendapat akurasi 73% tanpa belajar apapun — sehingga F1 dan ROC-AUC digunakan sebagai metrik utama.</p>
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-value">7.043</div><div class="stat-label">pelanggan</div></div>
+      <div class="stat"><div class="stat-value">20</div><div class="stat-label">fitur awal</div></div>
+      <div class="stat"><div class="stat-value">27%</div><div class="stat-label">tingkat churn</div></div>
+      <div class="stat"><div class="stat-value">6</div><div class="stat-label">fitur baru</div></div>
+    </div>
+
+    <div class="chart-wrap">
+      <div class="chart-title">Distribusi Kelas Target</div>
+      <div class="donut-wrap">
+        <svg class="donut-svg" width="140" height="140" viewBox="0 0 140 140">
+          <!-- No Churn: 73% = 263.88deg -->
+          <circle cx="70" cy="70" r="52" fill="none" stroke="#1a1e28" stroke-width="22"/>
+          <circle cx="70" cy="70" r="52" fill="none" stroke="#38bdf8" stroke-width="22"
+            stroke-dasharray="326.7 100" stroke-dashoffset="81.7"
+            transform="rotate(-90 70 70)" opacity="0.8"/>
+          <!-- Churn: 27% -->
+          <circle cx="70" cy="70" r="52" fill="none" stroke="#4fffb0" stroke-width="22"
+            stroke-dasharray="120.9 100" stroke-dashoffset="-245"
+            transform="rotate(-90 70 70)"/>
+          <text x="70" y="65" text-anchor="middle" font-family="Playfair Display, serif" font-size="22" fill="white">73/27</text>
+          <text x="70" y="82" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#6b7280">No/Yes</text>
+        </svg>
+        <div class="donut-legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#38bdf8"></div>
+            <span class="legend-label">Tidak Churn</span>
+            <span class="legend-val">5.174 (73%)</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#4fffb0"></div>
+            <span class="legend-label">Churn</span>
+            <span class="legend-val">1.869 (27%)</span>
+          </div>
+          <div style="margin-top: 8px; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid var(--border);">
+            <p style="font-size: 12px; color: var(--muted); margin: 0;">Ketidakseimbangan sedang (2.7:1) — akurasi bukan metrik yang tepat. Gunakan F1 & ROC-AUC.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODEL CHOICE -->
+  <section>
+    <div class="section-label">02 — Pemilihan Model</div>
+    <h2>Mengapa Model Berbasis Tree?</h2>
+    <p>Setelah analisis data eksploratif, dua model dipilih: <strong style="color:#fff">Random Forest</strong> dan <strong style="color:#fff">XGBoost</strong>. Keduanya merupakan metode ensemble berbasis Tree keputusan yang cocok untuk masalah ini.</p>
+    <div class="reason-grid">
+      <div class="reason-card"><div class="reason-dot"></div><div class="reason-text">PCA menunjukkan overlap kelas yang signifikan — data tidak bisa dipisahkan secara linear</div></div>
+      <div class="reason-card"><div class="reason-dot"></div><div class="reason-text">Terdapat interaction effect antar fitur yang kuat (contract × internet service)</div></div>
+      <div class="reason-card"><div class="reason-dot"></div><div class="reason-text">Pola distribusi non-linear pada tenure dan biaya berlangganan</div></div>
+      <div class="reason-card"><div class="reason-dot"></div><div class="reason-text">Menangani ketidakseimbangan kelas secara native via class_weight dan scale_pos_weight</div></div>
+      <div class="reason-card"><div class="reason-dot"></div><div class="reason-text">Tidak memerlukan feature scaling — bekerja langsung pada data yang sudah di-encode</div></div>
+      <div class="reason-card"><div class="reason-dot"></div><div class="reason-text">Uji Chi-square dan T-test mengkonfirmasi sebagian besar fitur signifikan secara statistik</div></div>
+    </div>
+  </section>
+
+  <!-- PIPELINE -->
+  <section>
+    <div class="section-label">03 — Pipeline</div>
+    <h2>Alur Kerja End-to-End</h2>
+    <div class="pipeline">
+      <div class="pipe-step">Load Data</div><div class="pipe-arrow">→</div>
+      <div class="pipe-step">Cleaning</div><div class="pipe-arrow">→</div>
+      <div class="pipe-step">EDA</div><div class="pipe-arrow">→</div>
+      <div class="pipe-step">Feature Eng.</div><div class="pipe-arrow">→</div>
+      <div class="pipe-step">Modeling</div><div class="pipe-arrow">→</div>
+      <div class="pipe-step">Tuning</div><div class="pipe-arrow">→</div>
+      <div class="pipe-step">Inference</div>
+    </div>
+
+    <div class="feat-grid" style="margin-top: 1.5rem;">
+      <div class="feat-card">
+        <div class="feat-name">Feature Engineering</div>
+        <div class="feat-desc">6 fitur baru ditambahkan berdasarkan domain knowledge — TotalServices, ChargePerService, AvgCharges, IsNewCustomer, IsLongTerm, TenureGroup</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-name">Strategi Encoding</div>
+        <div class="feat-desc">Binary encoding untuk kolom Ya/Tidak. "No internet service" disamakan dengan "No". Ordinal untuk Contract. One-hot untuk InternetService dan PaymentMethod.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-name">Penanganan Imbalance</div>
+        <div class="feat-desc">class_weight='balanced' untuk Random Forest. scale_pos_weight untuk XGBoost. SMOTE dicoba tapi ditolak karena hasilnya lebih buruk.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-name">Hyperparameter Tuning</div>
+        <div class="feat-desc">Optuna TPE sampler dengan 20 percobaan per model. StratifiedKFold (5-fold) cross-validation digunakan sebagai objektif optimasi (F1 score).</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TUNING -->
+  <section>
+    <div class="section-label">04 — Progres Tuning</div>
+    <h2>Peningkatan Langkah demi Langkah</h2>
+    <div class="tuning-list">
+      <div class="tuning-item">
+        <span class="tuning-name">Step 1 — Penanganan class weight (RF) / scale_pos_weight (XGB)</span>
+        <span class="tag tag-up">imbalance teratasi</span>
+      </div>
+      <div class="tuning-item">
+        <span class="tuning-name">Step 2 — Threshold tuning pada model baseline (0.50 → 0.27)</span>
+        <span class="tag tag-up">recall +15%</span>
+      </div>
+      <div class="tuning-item">
+        <span class="tuning-name">Step 3 — Pencarian hyperparameter Optuna (20 percobaan)</span>
+        <span class="tag tag-up">F1 0.60 → 0.64</span>
+      </div>
+      <div class="tuning-item">
+        <span class="tuning-name">Step 4 — Threshold di-tuning ulang pada model tuned</span>
+        <span class="tag tag-up">ROC-AUC 0.8486</span>
+      </div>
+      <div class="tuning-item">
+        <span class="tuning-name">Step 5 — Eksperimen SMOTE</span>
+        <span class="tag tag-down">ditolak — hasil lebih buruk</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section>
+    <div class="section-label">05 — Hasil Pengujian</div>
+    <h2>Performa Model</h2>
+    <p>Semua model dievaluasi pada test set yang sama (20% dari data training). Metrik utama: Churn F1 dan ROC-AUC.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Churn F1</th>
+            <th>Recall</th>
+            <th>ROC-AUC</th>
+            <th>Threshold</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>RF Baseline</td><td>0.62</td><td>76%</td><td>0.8231</td><td>0.27</td></tr>
+          <tr><td>XGB Baseline</td><td>0.60</td><td>81%</td><td>0.8215</td><td>0.27</td></tr>
+          <tr><td>RF Tuned</td><td>0.63</td><td>74%</td><td>0.8454</td><td>0.51</td></tr>
+          <tr class="winner">
+            <td>XGB Tuned <span class="badge-best">terbaik</span></td><td>0.64</td><td>73%</td><td>0.8486</td><td>0.57</td>
+          </tr>
+          <tr><td>RF + SMOTE</td><td>0.63</td><td>81%</td><td>0.8377</td><td>0.40</td></tr>
+          <tr><td>XGB + SMOTE</td><td>0.62</td><td>85%</td><td>0.8368</td><td>0.29</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="chart-wrap" style="margin-top: 1.5rem;">
+      <div class="chart-title">Perbandingan ROC-AUC — Semua Model</div>
+      <div class="bar-chart">
+        <div class="bc-row bc-normal">
+          <span class="bc-label">RF Baseline</span>
+          <div class="bc-track"><div class="bc-fill" style="width:82.31%"><span class="bc-val">0.8231</span></div></div>
+        </div>
+        <div class="bc-row bc-normal">
+          <span class="bc-label">XGB Baseline</span>
+          <div class="bc-track"><div class="bc-fill" style="width:82.15%"><span class="bc-val">0.8215</span></div></div>
+        </div>
+        <div class="bc-row bc-normal">
+          <span class="bc-label">RF + SMOTE</span>
+          <div class="bc-track"><div class="bc-fill" style="width:83.77%"><span class="bc-val">0.8377</span></div></div>
+        </div>
+        <div class="bc-row bc-normal">
+          <span class="bc-label">XGB + SMOTE</span>
+          <div class="bc-track"><div class="bc-fill" style="width:83.68%"><span class="bc-val">0.8368</span></div></div>
+        </div>
+        <div class="bc-row bc-normal">
+          <span class="bc-label">RF Tuned</span>
+          <div class="bc-track"><div class="bc-fill" style="width:84.54%"><span class="bc-val">0.8454</span></div></div>
+        </div>
+        <div class="bc-row bc-winner">
+          <span class="bc-label" style="color:#4fffb0; font-weight:500;">XGB Tuned ★</span>
+          <div class="bc-track"><div class="bc-fill" style="width:84.86%"><span class="bc-val">0.8486</span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- INFERENCE -->
+  <section>
+    <div class="section-label">06 — Inference Data Unseen</div>
+    <h2>10 Sampel yang Belum Pernah Dilihat Model</h2>
+    <p>Sebagian kecil data dipisahkan sebelum proses training maupun feature engineering. Model tidak pernah melihat sampel ini selama keseluruhan pipeline. Threshold: <strong style="color:#fff">0.57</strong>.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>Confidence Score</th>
+            <th>Prediksi</th>
+            <th>Aktual</th>
+            <th>Hasil</th>
+          </tr>
+        </thead>
+        <tbody class="inf-row">
+          <tr><td>1</td><td>9.97%</td><td>No Churn</td><td>No Churn</td><td class="correct">✓ Benar</td></tr>
+          <tr><td>2</td><td>75.89%</td><td>Churn</td><td>Churn</td><td class="correct">✓ Benar</td></tr>
+          <tr><td>3</td><td>22.31%</td><td>No Churn</td><td>No Churn</td><td class="correct">✓ Benar</td></tr>
+          <tr><td>4</td><td>82.47%</td><td>Churn</td><td>Churn</td><td class="correct">✓ Benar</td></tr>
+          <tr><td>5</td><td>86.31%</td><td>Churn</td><td>Churn</td><td class="correct">✓ Benar</td></tr>
+          <tr><td>6</td><td>4.79%</td><td>No Churn</td><td>No Churn</td><td class="correct">✓ Benar</td></tr>
+          <tr><td>7</td><td>22.89%</td><td>No Churn</td><td>No Churn</td><td class="correct">✓ Benar</td></tr>
+          <tr><td>8</td><td>79.22%</td><td>Churn</td><td>No Churn</td><td class="wrong">✗ Salah</td></tr>
+          <tr><td>9</td><td>27.49%</td><td>No Churn</td><td>No Churn</td><td class="correct">✓ Benar</td></tr>
+          <tr><td>10</td><td>27.15%</td><td>No Churn</td><td>No Churn</td><td class="correct">✓ Benar</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top: 1rem; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--accent);">9/10 benar pada data yang benar-benar unseen (90%)</p>
+
+    <div class="chart-wrap" style="margin-top: 1.5rem;">
+      <div class="chart-title">Confidence Score per Sampel (threshold = 0.57)</div>
+      <div class="conf-chart">
+        <div class="conf-row"><span class="conf-no">1</span><div class="conf-track"><div class="conf-fill correct" style="width:9.97%"><span class="conf-val correct">9.97% — Benar</span></div></div></div>
+        <div class="conf-row"><span class="conf-no">2</span><div class="conf-track"><div class="conf-fill correct" style="width:75.89%"><span class="conf-val correct">75.89% — Benar</span></div></div></div>
+        <div class="conf-row"><span class="conf-no">3</span><div class="conf-track"><div class="conf-fill correct" style="width:22.31%"><span class="conf-val correct">22.31% — Benar</span></div></div></div>
+        <div class="conf-row"><span class="conf-no">4</span><div class="conf-track"><div class="conf-fill correct" style="width:82.47%"><span class="conf-val correct">82.47% — Benar</span></div></div></div>
+        <div class="conf-row"><span class="conf-no">5</span><div class="conf-track"><div class="conf-fill correct" style="width:86.31%"><span class="conf-val correct">86.31% — Benar</span></div></div></div>
+        <div class="conf-row"><span class="conf-no">6</span><div class="conf-track"><div class="conf-fill correct" style="width:4.79%"><span class="conf-val correct">4.79% — Benar</span></div></div></div>
+        <div class="conf-row"><span class="conf-no">7</span><div class="conf-track"><div class="conf-fill correct" style="width:22.89%"><span class="conf-val correct">22.89% — Benar</span></div></div></div>
+        <div class="conf-row"><span class="conf-no">8</span><div class="conf-track"><div class="conf-fill wrong" style="width:79.22%"><span class="conf-val wrong">79.22% — Salah</span></div></div></div>
+        <div class="conf-row"><span class="conf-no">9</span><div class="conf-track"><div class="conf-fill correct" style="width:27.49%"><span class="conf-val correct">27.49% — Benar</span></div></div></div>
+        <div class="conf-row"><span class="conf-no">10</span><div class="conf-track"><div class="conf-fill correct" style="width:27.15%"><span class="conf-val correct">27.15% — Benar</span></div></div></div>
+      </div>
+      <p style="margin-top: 12px; font-size: 12px; color: var(--muted);">Hijau = prediksi benar &nbsp;·&nbsp; Merah = prediksi salah &nbsp;·&nbsp; Panjang bar = confidence score</p>
+    </div>
+  </section>
+
+  <!-- INSIGHTS -->
+  <section>
+    <div class="section-label">07 — Insight Bisnis</div>
+    <h2>Temuan Utama</h2>
+    <div class="insight-grid">
+      <div class="insight-card">
+        <div class="insight-num">~43%</div>
+        <div class="insight-desc">Tingkat churn pelanggan dengan kontrak month-to-month — kelompok paling berisiko</div>
+      </div>
+      <div class="insight-card">
+        <div class="insight-num">12 bln</div>
+        <div class="insight-desc">Periode kritis — pelanggan baru paling rentan churn di tahun pertama</div>
+      </div>
+      <div class="insight-card">
+        <div class="insight-num">Fiber</div>
+        <div class="insight-desc">Pengguna fiber optic tanpa add-on menunjukkan churn tinggi meski biaya lebih mahal</div>
+      </div>
+      <div class="insight-card">
+        <div class="insight-num">e-check</div>
+        <div class="insight-desc">Pengguna electronic check lebih banyak churn dibanding metode pembayaran lainnya</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <p>Vincentius Leonanda Prabowo · AI Engineer ·
+      <a href="https://github.com/leonanda1013/Telco-Customer-Churn">GitHub Repository</a>
+    </p>
+    <p style="margin-top: 6px;">Dataset: <a href="https://www.kaggle.com/datasets/blastchar/telco-customer-churn">Kaggle — Telco Customer Churn</a></p>
+  </footer>
+
+</div>
+</body>
+</html>
