@@ -1,0 +1,11 @@
+No,Confidence Score,Prediksi,Aktual,Hasil
+1,9.97%,No Churn,No Churn,Benar
+2,75.89%,Churn,Churn,Benar
+3,22.31%,No Churn,No Churn,Benar
+4,82.47%,Churn,Churn,Benar
+5,86.31%,Churn,Churn,Benar
+6,4.79%,No Churn,No Churn,Benar
+7,22.89%,No Churn,No Churn,Benar
+8,79.22%,Churn,No Churn,Salah
+9,27.49%,No Churn,No Churn,Benar
+10,27.15%,No Churn,No Churn,Benar
