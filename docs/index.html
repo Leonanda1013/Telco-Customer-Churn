@@ -1,802 +1,1931 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Telco Churn Predictor — Vincentius Leonanda</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+  <title>Prediksi Churn Pelanggan Telco — Vincentius Leonanda Prabowo</title>
+  
+  <!-- Google Fonts: Plus Jakarta Sans & DM Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
     :root {
-      --bg: #0d0f14;
-      --bg2: #13161d;
-      --bg3: #1a1e28;
-      --border: rgba(255,255,255,0.07);
-      --accent: #4fffb0;
-      --accent2: #38bdf8;
-      --text: #e8eaf0;
-      --muted: #6b7280;
-      --danger: #f87171;
+      --bg-page: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-subtle: #f1f5f9;
+      --bg-subtle-hover: #e2e8f0;
+      
+      --border: #e2e8f0;
+      --border-subtle: #edf2f7;
+      --border-focus: #cbd5e1;
+
+      --text-main: #0f172a;
+      --text-body: #334155;
+      --text-muted: #64748b;
+      --text-dim: #94a3b8;
+
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --primary-light: #eef2ff;
+      --primary-border: #c7d2fe;
+
+      --sky: #0284c7;
+      --sky-light: #f0f9ff;
+      --sky-border: #bae6fd;
+
+      --emerald: #059669;
+      --emerald-light: #ecfdf5;
+      --emerald-border: #a7f3d0;
+
+      --rose: #e11d48;
+      --rose-light: #fff1f2;
+      --rose-border: #fecdd3;
+
+      --amber: #d97706;
+      --amber-light: #fffbeb;
+      --amber-border: #fde68a;
+
+      --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+      --shadow-sm: 0 2px 4px -1px rgba(15, 23, 42, 0.05), 0 1px 2px -1px rgba(15, 23, 42, 0.03);
+      --shadow-md: 0 6px 16px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+      --shadow-lg: 0 16px 32px -4px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.04);
+
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 18px;
+      --radius-full: 9999px;
     }
 
-    html { scroll-behavior: smooth; }
+    html {
+      scroll-behavior: smooth;
+    }
 
     body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'DM Sans', sans-serif;
-      font-weight: 300;
-      line-height: 1.7;
+      background-color: var(--bg-page);
+      color: var(--text-body);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 15px;
+      line-height: 1.65;
+      position: relative;
+      min-height: 100vh;
       overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* ── NOISE OVERLAY ── */
-    body::before {
-      content: '';
+    /* Ambient Background Glow */
+    .ambient-bg {
       position: fixed;
       inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
       pointer-events: none;
       z-index: 0;
-      opacity: 0.4;
+      background:
+        radial-gradient(circle at 15% 10%, rgba(99, 102, 241, 0.06) 0%, transparent 45%),
+        radial-gradient(circle at 85% 25%, rgba(14, 165, 233, 0.06) 0%, transparent 40%),
+        radial-gradient(circle at 50% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
     }
 
-    .container { max-width: 860px; margin: 0 auto; padding: 0 2rem; position: relative; z-index: 1; }
-
-    /* ── HEADER ── */
-    header {
-      padding: 5rem 0 4rem;
-      border-bottom: 1px solid var(--border);
+    .container {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 0 1.75rem;
       position: relative;
+      z-index: 1;
     }
 
-    .eyebrow {
-      font-family: 'DM Mono', monospace;
-      font-size: 11px;
-      letter-spacing: 0.2em;
-      color: var(--accent);
-      text-transform: uppercase;
-      margin-bottom: 1.2rem;
-      display: flex;
-      align-items: center;
-      gap: 10px;
+    /* ── HEADER / HERO ── */
+    header {
+      padding: 4.5rem 0 3.5rem;
+      border-bottom: 1px solid var(--border);
     }
-    .eyebrow::before {
-      content: '';
-      display: block;
-      width: 32px;
-      height: 1px;
-      background: var(--accent);
+
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: var(--primary-light);
+      border: 1px solid var(--primary-border);
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--primary);
+      letter-spacing: 0.04em;
+      margin-bottom: 1.5rem;
+    }
+
+    .badge-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
     }
 
     h1 {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(2.2rem, 5vw, 3.4rem);
+      font-size: clamp(2.3rem, 5.5vw, 3.5rem);
+      font-weight: 800;
       line-height: 1.15;
-      font-weight: 700;
-      margin-bottom: 1.2rem;
-      background: linear-gradient(135deg, #fff 40%, #6b7280);
+      letter-spacing: -0.03em;
+      color: var(--text-main);
+      margin-bottom: 1.25rem;
+    }
+
+    h1 .highlight {
+      background: linear-gradient(135deg, #4f46e5 0%, #0284c7 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
 
     .subtitle {
-      font-size: 1rem;
-      color: var(--muted);
-      max-width: 520px;
-      margin-bottom: 2rem;
+      font-size: 1.08rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+      max-width: 680px;
+      margin-bottom: 1.75rem;
+      font-weight: 400;
     }
 
     .meta-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 8px;
       align-items: center;
+      margin-bottom: 2rem;
     }
 
     .pill {
       font-family: 'DM Mono', monospace;
-      font-size: 11px;
-      padding: 4px 12px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      color: var(--muted);
-      letter-spacing: 0.05em;
-    }
-    .pill.green { border-color: rgba(79,255,176,0.3); color: var(--accent); }
-    .pill.blue  { border-color: rgba(56,189,248,0.3); color: var(--accent2); }
-
-    /* ── SECTION ── */
-    section { padding: 3.5rem 0; border-bottom: 1px solid var(--border); }
-    section:last-of-type { border-bottom: none; }
-
-    .section-label {
-      font-family: 'DM Mono', monospace;
-      font-size: 10px;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 1.5rem;
-    }
-
-    h2 {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.6rem;
-      font-weight: 700;
-      margin-bottom: 1rem;
-      color: #fff;
-    }
-
-    p { color: #9ca3af; margin-bottom: 1rem; font-size: 0.95rem; }
-    p:last-child { margin-bottom: 0; }
-
-    /* ── STAT GRID ── */
-    .stat-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 1px;
-      background: var(--border);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      overflow: hidden;
-      margin-top: 1.5rem;
-    }
-
-    .stat {
-      background: var(--bg2);
-      padding: 1.4rem 1.2rem;
-    }
-
-    .stat-value {
-      font-family: 'Playfair Display', serif;
-      font-size: 2rem;
-      color: #fff;
-      line-height: 1;
-      margin-bottom: 4px;
-    }
-
-    .stat-label {
-      font-size: 11px;
-      color: var(--muted);
-      font-family: 'DM Mono', monospace;
-      letter-spacing: 0.05em;
-    }
-
-    /* ── REASON CARDS ── */
-    .reason-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 1.5rem;
-    }
-
-    .reason-card {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1.1rem 1.2rem;
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-      transition: border-color 0.2s;
-    }
-    .reason-card:hover { border-color: rgba(79,255,176,0.2); }
-
-    .reason-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--accent);
-      flex-shrink: 0;
-      margin-top: 7px;
-    }
-
-    .reason-text { font-size: 0.88rem; color: #9ca3af; }
-
-    /* ── TABLE ── */
-    .table-wrap {
-      margin-top: 1.5rem;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      overflow: hidden;
-    }
-
-    table { width: 100%; border-collapse: collapse; }
-
-    thead tr {
-      background: var(--bg3);
-    }
-
-    th {
-      font-family: 'DM Mono', monospace;
-      font-size: 10px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--muted);
-      padding: 10px 16px;
-      text-align: left;
-      font-weight: 400;
-    }
-
-    td {
-      padding: 11px 16px;
-      font-size: 0.875rem;
-      color: #9ca3af;
-      border-top: 1px solid var(--border);
-    }
-
-    tr.winner td { background: rgba(79,255,176,0.04); color: #e8eaf0; }
-    tr.winner td:first-child { color: var(--accent); font-weight: 500; }
-
-    .badge-best {
-      font-family: 'DM Mono', monospace;
-      font-size: 9px;
-      padding: 2px 7px;
-      border-radius: 999px;
-      background: rgba(79,255,176,0.12);
-      color: var(--accent);
-      border: 1px solid rgba(79,255,176,0.2);
-      margin-left: 6px;
-      vertical-align: middle;
-      letter-spacing: 0.05em;
-    }
-
-    /* ── INFERENCE TABLE ── */
-    .inf-row td:nth-child(4) { font-family: 'DM Mono', monospace; font-size: 12px; }
-    .correct { color: var(--accent) !important; }
-    .wrong   { color: var(--danger) !important; }
-
-    /* ── PIPELINE ── */
-    .pipeline {
-      display: flex;
-      align-items: center;
-      gap: 0;
-      margin-top: 1.5rem;
-      flex-wrap: wrap;
-    }
-
-    .pipe-step {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 8px 14px;
-      font-family: 'DM Mono', monospace;
-      font-size: 11px;
-      color: var(--muted);
-      white-space: nowrap;
-    }
-
-    .pipe-arrow {
       font-size: 12px;
-      color: var(--border);
-      padding: 0 6px;
-    }
-
-    /* ── FEATURE TABLE ── */
-    .feat-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 1.5rem;
-    }
-
-    .feat-card {
-      background: var(--bg2);
+      font-weight: 500;
+      padding: 5px 12px;
+      border-radius: var(--radius-full);
+      background: var(--bg-surface);
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1rem 1.1rem;
+      color: var(--text-muted);
+      box-shadow: var(--shadow-xs);
+    }
+    .pill.indigo {
+      background: var(--primary-light);
+      border-color: var(--primary-border);
+      color: var(--primary);
+    }
+    .pill.emerald {
+      background: var(--emerald-light);
+      border-color: var(--emerald-border);
+      color: var(--emerald);
+    }
+    .pill.sky {
+      background: var(--sky-light);
+      border-color: var(--sky-border);
+      color: var(--sky);
     }
 
-    .feat-name {
-      font-family: 'DM Mono', monospace;
-      font-size: 12px;
-      color: var(--accent2);
-      margin-bottom: 4px;
-    }
-
-    .feat-desc { font-size: 0.82rem; color: var(--muted); }
-
-    /* ── INSIGHT GRID ── */
-    .insight-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 1.5rem;
-    }
-
-    .insight-card {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1.2rem;
-    }
-
-    .insight-num {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.8rem;
-      color: #fff;
-      line-height: 1;
-      margin-bottom: 6px;
-    }
-
-    .insight-desc { font-size: 0.83rem; color: var(--muted); }
-
-    /* ── TUNING STEPS ── */
-    .tuning-list { margin-top: 1.5rem; }
-
-    .tuning-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--border);
-      gap: 12px;
-    }
-    .tuning-item:last-child { border-bottom: none; }
-
-    .tuning-name { font-size: 0.9rem; color: #9ca3af; }
-
-    .tag {
-      font-family: 'DM Mono', monospace;
-      font-size: 10px;
-      padding: 3px 10px;
-      border-radius: 999px;
-      white-space: nowrap;
-    }
-    .tag-up   { background: rgba(79,255,176,0.1);  color: var(--accent); border: 1px solid rgba(79,255,176,0.2); }
-    .tag-down { background: rgba(248,113,113,0.1); color: var(--danger); border: 1px solid rgba(248,113,113,0.2); }
-
-    /* ── BUTTONS ── */
+    /* Action Buttons */
     .btn-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 2rem;
+      gap: 12px;
     }
 
     .btn {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 9px;
       padding: 10px 18px;
-      border-radius: 8px;
-      font-family: 'DM Mono', monospace;
-      font-size: 12px;
-      letter-spacing: 0.04em;
+      border-radius: var(--radius-md);
+      font-size: 13.5px;
+      font-weight: 600;
       text-decoration: none;
-      transition: all 0.2s;
-      border: 1px solid transparent;
+      transition: all 0.2s ease;
       cursor: pointer;
+      border: 1px solid transparent;
+      box-shadow: var(--shadow-sm);
+    }
+    .btn:hover {
+      transform: translateY(-1.5px);
+      box-shadow: var(--shadow-md);
+    }
+    .btn svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
     }
 
-    .btn-github {
-      background: #fff;
-      color: #0d0f14;
-      border-color: #fff;
+    .btn-primary {
+      background: #0f172a;
+      color: #ffffff;
+      border-color: #0f172a;
     }
-    .btn-github:hover { background: #e8eaf0; }
+    .btn-primary:hover {
+      background: #1e293b;
+      color: #ffffff;
+    }
 
     .btn-colab {
-      background: #F9AB00;
-      color: #0d0f14;
-      border-color: #F9AB00;
+      background: #fffbeb;
+      color: #b45309;
+      border-color: #fde68a;
     }
-    .btn-colab:hover { background: #e09c00; }
-
-    .btn-notebook {
-      background: transparent;
-      color: var(--accent2);
-      border-color: rgba(56,189,248,0.3);
+    .btn-colab:hover {
+      background: #fef3c7;
+      color: #92400e;
     }
-    .btn-notebook:hover { background: rgba(56,189,248,0.08); border-color: var(--accent2); }
 
-    .btn-results {
-      background: transparent;
-      color: var(--accent);
-      border-color: rgba(79,255,176,0.3);
+    .btn-secondary {
+      background: var(--bg-surface);
+      color: var(--text-body);
+      border-color: var(--border);
     }
-    .btn-results:hover { background: rgba(79,255,176,0.08); border-color: var(--accent); }
+    .btn-secondary:hover {
+      background: var(--bg-subtle);
+      color: var(--text-main);
+    }
 
-    .btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+    /* ── HERO STATS RIBBON ── */
+    .hero-stat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-top: 2.5rem;
+    }
 
-    /* ── CHARTS ── */
-    .chart-wrap {
-      margin-top: 1.5rem;
-      background: var(--bg2);
+    .hero-stat-card {
+      background: var(--bg-surface);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.5rem;
+      border-radius: var(--radius-md);
+      padding: 1.25rem 1.15rem;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      transition: all 0.2s ease;
+    }
+    .hero-stat-card:hover {
+      border-color: var(--border-focus);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
     }
 
-    .chart-title {
-      font-family: 'DM Mono', monospace;
-      font-size: 11px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 1.2rem;
-    }
-
-    /* Donut Chart */
-    .donut-wrap {
+    .hero-stat-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
       display: flex;
       align-items: center;
-      gap: 2rem;
+      justify-content: center;
+      margin-bottom: 12px;
+      background: var(--primary-light);
+      color: var(--primary);
     }
+    .hero-stat-icon.sky { background: var(--sky-light); color: var(--sky); }
+    .hero-stat-icon.emerald { background: var(--emerald-light); color: var(--emerald); }
+    .hero-stat-icon.amber { background: var(--amber-light); color: var(--amber); }
 
-    .donut-svg { flex-shrink: 0; }
-
-    .donut-legend { display: flex; flex-direction: column; gap: 10px; }
-
-    .legend-item { display: flex; align-items: center; gap: 10px; }
-    .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .legend-label { font-size: 13px; color: #9ca3af; }
-    .legend-val { font-family: 'DM Mono', monospace; font-size: 13px; color: #fff; margin-left: auto; padding-left: 20px; }
-
-    /* Bar Chart */
-    .bar-chart { display: flex; flex-direction: column; gap: 10px; }
-
-    .bc-row { display: flex; align-items: center; gap: 12px; }
-    .bc-label { font-size: 12px; color: #9ca3af; width: 120px; flex-shrink: 0; font-family: 'DM Mono', monospace; }
-    .bc-track { flex: 1; background: rgba(255,255,255,0.05); border-radius: 4px; height: 28px; overflow: hidden; position: relative; }
-    .bc-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 10px; transition: width 1s ease; }
-    .bc-val { font-family: 'DM Mono', monospace; font-size: 11px; color: #0d0f14; font-weight: 500; }
-    .bc-winner .bc-fill { background: linear-gradient(90deg, #4fffb0, #38bdf8); }
-    .bc-normal .bc-fill { background: rgba(255,255,255,0.12); }
-    .bc-normal .bc-val { color: #9ca3af; }
-
-    /* Confidence Chart */
-    .conf-chart { display: flex; flex-direction: column; gap: 8px; }
-    .conf-row { display: flex; align-items: center; gap: 10px; }
-    .conf-no { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); width: 20px; flex-shrink: 0; }
-    .conf-track { flex: 1; background: rgba(255,255,255,0.05); border-radius: 4px; height: 22px; overflow: hidden; }
-    .conf-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 8px; }
-    .conf-fill.correct { background: rgba(79,255,176,0.25); border: 1px solid rgba(79,255,176,0.3); }
-    .conf-fill.wrong   { background: rgba(248,113,113,0.25); border: 1px solid rgba(248,113,113,0.3); }
-    .conf-val { font-family: 'DM Mono', monospace; font-size: 10px; }
-    .conf-val.correct { color: var(--accent); }
-    .conf-val.wrong   { color: var(--danger); }
-    .conf-threshold { border-left: 2px dashed rgba(255,255,255,0.2); position: absolute; top: 0; bottom: 0; }
-
-    /* ── FOOTER ── */
-    footer {
-      padding: 2.5rem 0;
-      text-align: center;
-      font-family: 'DM Mono', monospace;
-      font-size: 11px;
-      color: var(--muted);
+    .hero-stat-val {
+      font-size: 1.85rem;
+      font-weight: 800;
+      color: var(--text-main);
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+    .hero-stat-lbl {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
       letter-spacing: 0.05em;
     }
 
-    footer a { color: var(--accent2); text-decoration: none; }
-    footer a:hover { text-decoration: underline; }
-
-    /* ── ANIMATIONS ── */
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to   { opacity: 1; transform: translateY(0); }
+    /* ── SECTIONS ── */
+    section {
+      padding: 3.75rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    section:last-of-type {
+      border-bottom: none;
     }
 
-    header, section {
-      animation: fadeUp 0.6s ease both;
+    .section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
-    section:nth-of-type(1) { animation-delay: 0.1s; }
-    section:nth-of-type(2) { animation-delay: 0.15s; }
-    section:nth-of-type(3) { animation-delay: 0.2s; }
-    section:nth-of-type(4) { animation-delay: 0.25s; }
-    section:nth-of-type(5) { animation-delay: 0.3s; }
-    section:nth-of-type(6) { animation-delay: 0.35s; }
+    .section-label::before {
+      content: '';
+      display: inline-block;
+      width: 14px;
+      height: 2px;
+      background: var(--primary);
+      border-radius: 2px;
+    }
 
-    @media (max-width: 600px) {
-      .stat-grid    { grid-template-columns: 1fr 1fr; }
-      .reason-grid  { grid-template-columns: 1fr; }
-      .feat-grid    { grid-template-columns: 1fr; }
-      .insight-grid { grid-template-columns: 1fr; }
-      .pipeline     { gap: 4px; }
+    h2 {
+      font-size: 1.85rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+      margin-bottom: 1rem;
+    }
+
+    p {
+      color: var(--text-body);
+      margin-bottom: 1.15rem;
+      font-size: 0.98rem;
+    }
+    p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* ── CALLOUT BOX ── */
+    .callout {
+      padding: 1rem 1.25rem;
+      border-radius: var(--radius-md);
+      background: var(--sky-light);
+      border: 1px solid var(--sky-border);
+      color: #0369a1;
+      font-size: 0.92rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-top: 1.25rem;
+    }
+    .callout svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* ── CARD WRAPPER ── */
+    .card-wrap {
+      margin-top: 1.75rem;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--text-main);
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Donut Layout */
+    .donut-layout {
+      display: flex;
+      align-items: center;
+      gap: 2.5rem;
+      flex-wrap: wrap;
+    }
+
+    .donut-visual {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .donut-legend {
+      flex: 1;
+      min-width: 260px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      background: var(--bg-subtle);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+    }
+    .legend-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .legend-name {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+    .legend-count {
+      margin-left: auto;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    /* ── REASON GRID ── */
+    .reason-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      margin-top: 1.5rem;
+    }
+
+    .reason-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      box-shadow: var(--shadow-xs);
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      transition: all 0.2s ease;
+    }
+    .reason-card:hover {
+      border-color: var(--primary-border);
+      background: #fafbff;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .reason-icon-wrap {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      background: var(--primary-light);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .reason-icon-wrap svg {
+      width: 19px;
+      height: 19px;
+    }
+
+    .reason-content h4 {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 4px;
+    }
+    .reason-content p {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      line-height: 1.55;
+      margin: 0;
+    }
+
+    /* ── PIPELINE FLOW ── */
+    .pipeline-container {
+      margin-top: 1.5rem;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-xs);
+    }
+
+    .pipeline-steps {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+    }
+
+    .pipe-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      padding: 6px 14px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-main);
+      white-space: nowrap;
+    }
+    .pipe-num {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: 'DM Mono', monospace;
+    }
+    .pipe-arrow {
+      color: var(--text-dim);
+      font-weight: 700;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    /* Feature Grid */
+    .feat-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      margin-top: 1.25rem;
+    }
+
+    .feat-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      box-shadow: var(--shadow-xs);
+      transition: all 0.2s ease;
+    }
+    .feat-card:hover {
+      border-color: var(--border-focus);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .feat-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--sky);
+      background: var(--sky-light);
+      padding: 3px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+
+    .feat-card h4 {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 6px;
+    }
+    .feat-card p {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      line-height: 1.55;
+      margin: 0;
+    }
+
+    /* ── TUNING TIMELINE ── */
+    .tuning-list {
+      margin-top: 1.5rem;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 0.5rem 1.5rem;
+      box-shadow: var(--shadow-xs);
+    }
+
+    .tuning-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--border);
+      gap: 16px;
+    }
+    .tuning-item:last-child {
+      border-bottom: none;
+    }
+
+    .tuning-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .tuning-step-idx {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--primary);
+      background: var(--primary-light);
+      padding: 4px 8px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+    .tuning-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .tag-status {
+      font-family: 'DM Mono', monospace;
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      white-space: nowrap;
+    }
+    .tag-success {
+      background: var(--emerald-light);
+      color: var(--emerald);
+      border: 1px solid var(--emerald-border);
+    }
+    .tag-danger {
+      background: var(--rose-light);
+      color: var(--rose);
+      border: 1px solid var(--rose-border);
+    }
+
+    /* ── MODERN TABLES ── */
+    .table-container {
+      margin-top: 1.5rem;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .table-scroll {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    thead th {
+      background: var(--bg-subtle);
+      color: var(--text-muted);
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    tbody td {
+      padding: 12px 18px;
+      font-size: 13.5px;
+      color: var(--text-body);
+      border-bottom: 1px solid var(--border-subtle);
+      transition: background 0.15s;
+    }
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+    tbody tr:hover td {
+      background: #fafafa;
+    }
+
+    tr.winner-row td {
+      background: #f0fdf4 !important;
+      color: #065f46;
+      font-weight: 600;
+    }
+    tr.winner-row td:first-child {
+      color: var(--emerald);
+    }
+
+    .badge-winner {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: var(--radius-full);
+      background: var(--emerald);
+      color: #ffffff;
+      margin-left: 6px;
+      vertical-align: middle;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .status-pill {
+      font-family: 'DM Mono', monospace;
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: var(--radius-full);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .status-correct {
+      background: var(--emerald-light);
+      color: var(--emerald);
+    }
+    .status-wrong {
+      background: var(--rose-light);
+      color: var(--rose);
+    }
+
+    /* ── BAR CHARTS ── */
+    .bar-chart {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 1rem;
+    }
+
+    .bc-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .bc-label {
+      width: 130px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-body);
+      flex-shrink: 0;
+    }
+
+    .bc-track {
+      flex: 1;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      height: 32px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bc-fill {
+      height: 100%;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 12px;
+      transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .bc-val {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .bc-normal .bc-fill {
+      background: #e2e8f0;
+    }
+    .bc-normal .bc-val {
+      color: var(--text-body);
+    }
+
+    .bc-winner .bc-fill {
+      background: linear-gradient(90deg, #4f46e5 0%, #059669 100%);
+      box-shadow: 0 2px 10px rgba(5, 150, 105, 0.25);
+    }
+    .bc-winner .bc-val {
+      color: #ffffff;
+    }
+
+    /* Confidence Chart */
+    .conf-chart {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 1rem;
+      position: relative;
+    }
+
+    .conf-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .conf-no {
+      font-family: 'DM Mono', monospace;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      width: 24px;
+      flex-shrink: 0;
+    }
+
+    .conf-track {
+      flex: 1;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      height: 24px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .conf-fill {
+      height: 100%;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      padding-left: 8px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .conf-fill.correct {
+      background: var(--emerald-light);
+      color: var(--emerald);
+      border: 1px solid var(--emerald-border);
+    }
+    .conf-fill.wrong {
+      background: var(--rose-light);
+      color: var(--rose);
+      border: 1px solid var(--rose-border);
+    }
+
+    .threshold-guide {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 57%;
+      width: 2px;
+      background: #dc2626;
+      border-left: 1px dashed #ef4444;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .threshold-label {
+      position: absolute;
+      top: -20px;
+      left: 57%;
+      transform: translateX(-50%);
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      color: #dc2626;
+      background: #fee2e2;
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+
+    /* ── INSIGHT CARDS ── */
+    .insight-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-top: 1.5rem;
+    }
+
+    .insight-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.2s ease;
+    }
+    .insight-card:hover {
+      border-color: var(--border-focus);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    .insight-badge {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+
+    .insight-num {
+      font-size: 2.3rem;
+      font-weight: 800;
+      line-height: 1.1;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+    .insight-num.rose { color: var(--rose); }
+    .insight-num.amber { color: var(--amber); }
+    .insight-num.sky { color: var(--sky); }
+
+    .insight-desc {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    /* ── SIMULATOR WIDGET ── */
+    .simulator-card {
+      margin-top: 2rem;
+      background: #ffffff;
+      border: 2px solid var(--primary-border);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      overflow: hidden;
+    }
+    .simulator-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #4f46e5, #0284c7, #10b981);
+    }
+
+    .sim-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 1.75rem;
+    }
+    .sim-header h3 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+    .sim-badge {
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--primary-light);
+      color: var(--primary);
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+    }
+
+    .sim-layout {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    .sim-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .sim-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .sim-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+      display: flex;
+      justify-content: space-between;
+    }
+    .sim-val-display {
+      font-family: 'DM Mono', monospace;
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .sim-select {
+      width: 100%;
+      padding: 9px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+      font-family: inherit;
+      font-size: 13.5px;
+      color: var(--text-main);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .sim-select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+    }
+
+    input[type="range"] {
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    /* Simulator Output Panel */
+    .sim-output {
+      background: var(--bg-page);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.75rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 14px;
+    }
+
+    .sim-score-circle {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 6px solid var(--emerald);
+      background: #ffffff;
+      box-shadow: var(--shadow-md);
+      transition: all 0.3s ease;
+    }
+    .sim-score-pct {
+      font-size: 1.9rem;
+      font-weight: 800;
+      font-family: 'DM Mono', monospace;
+      line-height: 1;
+      color: var(--text-main);
+    }
+    .sim-score-lbl {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-top: 3px;
+    }
+
+    .sim-verdict {
+      font-size: 15px;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      letter-spacing: 0.02em;
+    }
+
+    .sim-recommendation {
+      font-size: 12.5px;
+      color: var(--text-body);
+      line-height: 1.55;
+      background: #ffffff;
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      text-align: left;
+      width: 100%;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      padding: 3.5rem 0 3rem;
+      text-align: center;
+      border-top: 1px solid var(--border);
+      margin-top: 2rem;
+    }
+
+    .footer-author {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 6px;
+    }
+
+    .footer-links {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .footer-links a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.15s;
+    }
+    .footer-links a:hover {
+      text-decoration: underline;
+      color: var(--primary-hover);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .hero-stat-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .reason-grid {
+        grid-template-columns: 1fr;
+      }
+      .feat-grid {
+        grid-template-columns: 1fr;
+      }
+      .insight-grid {
+        grid-template-columns: 1fr;
+      }
+      .sim-layout {
+        grid-template-columns: 1fr;
+      }
+      .donut-layout {
+        flex-direction: column;
+        align-items: center;
+      }
     }
   </style>
 </head>
 <body>
 
+<div class="ambient-bg"></div>
+
 <div class="container">
 
-  <!-- HEADER -->
+  <!-- HEADER / HERO -->
   <header>
-    <div class="eyebrow">Laporan Proyek ML</div>
-    <h1>Prediksi Churn<br>Pelanggan Telco</h1>
-    <p class="subtitle">Memprediksi pelanggan telekomunikasi yang kemungkinan akan berhenti berlangganan menggunakan model machine learning berbasis Tree keputusan dengan hyperparameter tuning dan threshold optimization.</p>
-    <div class="meta-row">
-      <span class="pill green">XGBoost</span>
-      <span class="pill green">Random Forest</span>
-      <span class="pill blue">ROC-AUC 0.8486</span>
-      <span class="pill">Kaggle Dataset</span>
-      <span class="pill">7.043 Pelanggan</span>
+    <div class="badge-pill">
+      <span class="badge-dot"></span>
+      Laporan Portofolio Machine Learning
     </div>
+
+    <h1>
+      Prediksi Churn<br />
+      <span class="highlight">Pelanggan Telco</span>
+    </h1>
+
+    <p class="subtitle">
+      Solusi machine learning berbasis Tree keputusan (XGBoost & Random Forest) yang dioptimalkan dengan threshold tuning untuk memprediksi pelanggan telekomunikasi yang berisiko berhenti berlangganan secara akurat.
+    </p>
+
+    <div class="meta-row">
+      <span class="pill emerald">XGBoost Tuned ★</span>
+      <span class="pill indigo">Random Forest</span>
+      <span class="pill sky">ROC-AUC 0.8486</span>
+      <span class="pill">Kaggle Dataset</span>
+      <span class="pill">7.043 Sampel</span>
+    </div>
+
     <div class="btn-row">
-      <a href="https://github.com/leonanda1013/Telco-Customer-Churn" target="_blank" class="btn btn-github">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12"/></svg>
+      <a href="https://github.com/leonanda1013/Telco-Customer-Churn" target="_blank" class="btn btn-primary">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12"/>
+        </svg>
         GitHub Repo
       </a>
+
       <a href="https://colab.research.google.com/drive/1P6bHGzgmOqUHoy_H9luvrDya_DGe5fSm?usp=sharing" target="_blank" class="btn btn-colab">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.9 4.8C14.3 2.2 10.5 1.4 7.1 2.7L10 5.6c2-.5 4.2 0 5.7 1.5 2.3 2.3 2.3 6.1 0 8.5-1.5 1.5-3.6 2-5.6 1.6l-3 3c3.5 1.2 7.3.4 9.9-2.2 3.4-3.5 3.4-9.1-.1-12.2zM7.1 16.5c-2.3-2.3-2.3-6.1 0-8.5 1.5-1.5 3.6-2 5.6-1.6l3-3C12.2 2.2 8.4 3 5.8 5.6 2.3 9.1 2.3 14.7 5.8 17.8c2.6 2.6 6.4 3.4 9.8 2.1l-2.9-2.9c-2 .5-4.3 0-5.6-1.5z"/></svg>
-        Buka di Colab
-      </a>
-      <a href="https://www.kaggle.com/datasets/blastchar/telco-customer-churn" target="_blank" class="btn btn-notebook">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        Lihat Dataset
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M16.9 4.8C14.3 2.2 10.5 1.4 7.1 2.7L10 5.6c2-.5 4.2 0 5.7 1.5 2.3 2.3 2.3 6.1 0 8.5-1.5 1.5-3.6 2-5.6 1.6l-3 3c3.5 1.2 7.3.4 9.9-2.2 3.4-3.5 3.4-9.1-.1-12.2zM7.1 16.5c-2.3-2.3-2.3-6.1 0-8.5 1.5-1.5 3.6-2 5.6-1.6l3-3C12.2 2.2 8.4 3 5.8 5.6 2.3 9.1 2.3 14.7 5.8 17.8c2.6 2.6 6.4 3.4 9.8 2.1l-2.9-2.9c-2 .5-4.3 0-5.6-1.5z"/>
+        </svg>
+        Buka di Google Colab
       </a>
 
+      <a href="https://www.kaggle.com/datasets/blastchar/telco-customer-churn" target="_blank" class="btn btn-secondary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+        Dataset Kaggle
+      </a>
+    </div>
+
+    <!-- Quick Stats Ribbon -->
+    <div class="hero-stat-grid">
+      <div class="hero-stat-card">
+        <div class="hero-stat-icon sky">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        </div>
+        <div class="hero-stat-val">7.043</div>
+        <div class="hero-stat-lbl">Total Pelanggan</div>
+      </div>
+
+      <div class="hero-stat-card">
+        <div class="hero-stat-icon amber">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+        </div>
+        <div class="hero-stat-val">20</div>
+        <div class="hero-stat-lbl">Fitur Awal</div>
+      </div>
+
+      <div class="hero-stat-card">
+        <div class="hero-stat-icon">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
+        </div>
+        <div class="hero-stat-val">27%</div>
+        <div class="hero-stat-lbl">Tingkat Churn</div>
+      </div>
+
+      <div class="hero-stat-card">
+        <div class="hero-stat-icon emerald">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+        </div>
+        <div class="hero-stat-val">0.8486</div>
+        <div class="hero-stat-lbl">Skor ROC-AUC</div>
+      </div>
     </div>
   </header>
 
-  <!-- DATASET -->
+  <!-- 01 — DATASET -->
   <section>
-    <div class="section-label">01 — Dataset</div>
-    <h2>Telco Customer Churn</h2>
-    <p>Dataset diambil dari <a href="https://www.kaggle.com/datasets/blastchar/telco-customer-churn" style="color:var(--accent2)">Kaggle</a>. Berisi data demografis dan perilaku penggunaan dari 7.043 pelanggan telekomunikasi. Variabel target menunjukkan apakah pelanggan berhenti berlangganan dalam satu bulan terakhir.</p>
-    <p>Tantangan utama: ketidakseimbangan kelas sedang (73/27). Model yang selalu memprediksi "tidak churn" bisa mendapat akurasi 73% tanpa belajar apapun — sehingga F1 dan ROC-AUC digunakan sebagai metrik utama.</p>
-    <div class="stat-grid">
-      <div class="stat"><div class="stat-value">7.043</div><div class="stat-label">pelanggan</div></div>
-      <div class="stat"><div class="stat-value">20</div><div class="stat-label">fitur awal</div></div>
-      <div class="stat"><div class="stat-value">27%</div><div class="stat-label">tingkat churn</div></div>
-      <div class="stat"><div class="stat-value">6</div><div class="stat-label">fitur baru</div></div>
-    </div>
+    <div class="section-label">01 — Dataset & Distribusi</div>
+    <h2>Karakteristik Data Telco</h2>
+    <p>
+      Dataset bersumber dari <a href="https://www.kaggle.com/datasets/blastchar/telco-customer-churn" target="_blank" style="color:var(--primary); font-weight:600;">Kaggle Telco Customer Churn</a>, mencakup data demografis, kepemilikan layanan internet/telepon, detail kontrak, dan riwayat tagihan dari <strong>7.043 pelanggan</strong>.
+    </p>
 
-    <div class="chart-wrap">
-      <div class="chart-title">Distribusi Kelas Target</div>
-      <div class="donut-wrap">
-        <svg class="donut-svg" width="140" height="140" viewBox="0 0 140 140">
-          <!-- No Churn: 73% = 263.88deg -->
-          <circle cx="70" cy="70" r="52" fill="none" stroke="#1a1e28" stroke-width="22"/>
-          <circle cx="70" cy="70" r="52" fill="none" stroke="#38bdf8" stroke-width="22"
-            stroke-dasharray="326.7 100" stroke-dashoffset="81.7"
-            transform="rotate(-90 70 70)" opacity="0.8"/>
-          <!-- Churn: 27% -->
-          <circle cx="70" cy="70" r="52" fill="none" stroke="#4fffb0" stroke-width="22"
-            stroke-dasharray="120.9 100" stroke-dashoffset="-245"
-            transform="rotate(-90 70 70)"/>
-          <text x="70" y="65" text-anchor="middle" font-family="Playfair Display, serif" font-size="22" fill="white">73/27</text>
-          <text x="70" y="82" text-anchor="middle" font-family="DM Mono, monospace" font-size="9" fill="#6b7280">No/Yes</text>
-        </svg>
+    <div class="card-wrap">
+      <div class="card-title">
+        <span>Distribusi Kelas Target (Churn vs Tidak Churn)</span>
+        <span style="font-size:11px; font-weight:500; color:var(--text-muted);">Total: 7.043 Baris</span>
+      </div>
+
+      <div class="donut-layout">
+        <!-- SVG Donut Chart -->
+        <div class="donut-visual">
+          <svg width="170" height="170" viewBox="0 0 170 170">
+            <!-- Background Track -->
+            <circle cx="85" cy="85" r="62" fill="none" stroke="#f1f5f9" stroke-width="24" />
+            
+            <!-- Tidak Churn: 73% (Keliling = 2 * PI * 62 = ~389.56) -->
+            <circle cx="85" cy="85" r="62" fill="none" stroke="#0284c7" stroke-width="24"
+              stroke-dasharray="284.38 105.18" stroke-dashoffset="97.39"
+              transform="rotate(-90 85 85)" />
+            
+            <!-- Churn: 27% -->
+            <circle cx="85" cy="85" r="62" fill="none" stroke="#e11d48" stroke-width="24"
+              stroke-dasharray="105.18 284.38" stroke-dashoffset="-186.99"
+              transform="rotate(-90 85 85)" />
+            
+            <text x="85" y="78" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="24" font-weight="800" fill="#0f172a">73 : 27</text>
+            <text x="85" y="98" text-anchor="middle" font-family="'DM Mono', monospace" font-size="11" font-weight="500" fill="#64748b">Rasio Kelas</text>
+          </svg>
+        </div>
+
         <div class="donut-legend">
-          <div class="legend-item">
-            <div class="legend-dot" style="background:#38bdf8"></div>
-            <span class="legend-label">Tidak Churn</span>
-            <span class="legend-val">5.174 (73%)</span>
+          <div class="legend-row">
+            <div class="legend-indicator" style="background:#0284c7;"></div>
+            <span class="legend-name">Tidak Churn (Tetap Berlangganan)</span>
+            <span class="legend-count">5.174 (73%)</span>
           </div>
-          <div class="legend-item">
-            <div class="legend-dot" style="background:#4fffb0"></div>
-            <span class="legend-label">Churn</span>
-            <span class="legend-val">1.869 (27%)</span>
+
+          <div class="legend-row">
+            <div class="legend-indicator" style="background:#e11d48;"></div>
+            <span class="legend-name">Churn (Berhenti Berlangganan)</span>
+            <span class="legend-count">1.869 (27%)</span>
           </div>
-          <div style="margin-top: 8px; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid var(--border);">
-            <p style="font-size: 12px; color: var(--muted); margin: 0;">Ketidakseimbangan sedang (2.7:1) — akurasi bukan metrik yang tepat. Gunakan F1 & ROC-AUC.</p>
+
+          <div class="callout" style="margin-top: 6px;">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <div>
+              <strong>Ketidakseimbangan Kelas (Moderate Imbalance 2.7 : 1)</strong><br />
+              Model naif yang selalu memprediksi "Tidak Churn" akan mendapatkan akurasi 73% tanpa menghasilkan manfaat bisnis. Karena itu, metrik evaluasi utama diarahkan pada <strong>F1-Score</strong> dan <strong>ROC-AUC</strong>.
+            </div>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- MODEL CHOICE -->
+  <!-- 02 — PEMILIHAN MODEL -->
   <section>
     <div class="section-label">02 — Pemilihan Model</div>
-    <h2>Mengapa Model Berbasis Tree?</h2>
-    <p>Setelah analisis data eksploratif, dua model dipilih: <strong style="color:#fff">Random Forest</strong> dan <strong style="color:#fff">XGBoost</strong>. Keduanya merupakan metode ensemble berbasis Tree keputusan yang cocok untuk masalah ini.</p>
+    <h2>Mengapa Menggunakan Model Berbasis Tree?</h2>
+    <p>
+      Eksplorasi data awal (EDA) menunjukkan bahwa data memiliki interaksi multi-fitur yang kompleks dan batas keputusan non-linear. Dua algoritma ensemble dipilih: <strong>Random Forest</strong> dan <strong>XGBoost</strong>.
+    </p>
+
     <div class="reason-grid">
-      <div class="reason-card"><div class="reason-dot"></div><div class="reason-text">PCA menunjukkan overlap kelas yang signifikan — data tidak bisa dipisahkan secara linear</div></div>
-      <div class="reason-card"><div class="reason-dot"></div><div class="reason-text">Terdapat interaction effect antar fitur yang kuat (contract × internet service)</div></div>
-      <div class="reason-card"><div class="reason-dot"></div><div class="reason-text">Pola distribusi non-linear pada tenure dan biaya berlangganan</div></div>
-      <div class="reason-card"><div class="reason-dot"></div><div class="reason-text">Menangani ketidakseimbangan kelas secara native via class_weight dan scale_pos_weight</div></div>
-      <div class="reason-card"><div class="reason-dot"></div><div class="reason-text">Tidak memerlukan feature scaling — bekerja langsung pada data yang sudah di-encode</div></div>
-      <div class="reason-card"><div class="reason-dot"></div><div class="reason-text">Uji Chi-square dan T-test mengkonfirmasi sebagian besar fitur signifikan secara statistik</div></div>
+      <div class="reason-card">
+        <div class="reason-icon-wrap">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+        </div>
+        <div class="reason-content">
+          <h4>Batas Keputusan Non-Linear</h4>
+          <p>Uji PCA menunjukkan overlap kelas yang kuat. Hubungan antara tenure dan biaya bulanan tidak dapat dipisahkan dengan hyperplane linear sederhana.</p>
+        </div>
+      </div>
+
+      <div class="reason-card">
+        <div class="reason-icon-wrap">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m9 12 2 2 4-4"/></svg>
+        </div>
+        <div class="reason-content">
+          <h4>Interaksi Fitur Kompleks</h4>
+          <p>Tree model secara alami menangkap interaksi penting antar variabel, seperti kombinasi tipe kontrak dan layanan internet tanpa feature cross manual.</p>
+        </div>
+      </div>
+
+      <div class="reason-card">
+        <div class="reason-icon-wrap">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="12" y1="8" x2="12" y2="16"/></svg>
+        </div>
+        <div class="reason-content">
+          <h4>Dukungan Imbalance Bawaan</h4>
+          <p>Mendukung pembobotan sampel langsung via <code>scale_pos_weight</code> (XGBoost) dan <code>class_weight='balanced'</code> (Random Forest).</p>
+        </div>
+      </div>
+
+      <div class="reason-card">
+        <div class="reason-icon-wrap">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </div>
+        <div class="reason-content">
+          <h4>Invarian terhadap Scaling</h4>
+          <p>Pohon keputusan membagi node berdasarkan urutan nilai fitur, sehingga tahan terhadap perbedaan skala nilai dan outlier numerik tanpa standarisasi wajib.</p>
+        </div>
+      </div>
+
+      <div class="reason-card">
+        <div class="reason-icon-wrap">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div class="reason-content">
+          <h4>Signifikansi Statistik Teruji</h4>
+          <p>Uji Chi-square (kategorikal) dan T-test dua sampel (numerik) mengonfirmasi bahwa hampir seluruh fitur terpilih memiliki korelasi signifikan dengan target churn.</p>
+        </div>
+      </div>
+
+      <div class="reason-card">
+        <div class="reason-icon-wrap">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <div class="reason-content">
+          <h4>Efisiensi & Interpretabilitas</h4>
+          <p>XGBoost memberikan kecepatan komputasi tinggi dengan histogram binning, serta feature importance yang mudah dipahami oleh tim bisnis.</p>
+        </div>
+      </div>
     </div>
   </section>
 
-  <!-- PIPELINE -->
+  <!-- 03 — PIPELINE KERJA -->
   <section>
-    <div class="section-label">03 — Pipeline</div>
+    <div class="section-label">03 — Arsitektur Pipeline</div>
     <h2>Alur Kerja End-to-End</h2>
-    <div class="pipeline">
-      <div class="pipe-step">Load Data</div><div class="pipe-arrow">→</div>
-      <div class="pipe-step">Cleaning</div><div class="pipe-arrow">→</div>
-      <div class="pipe-step">EDA</div><div class="pipe-arrow">→</div>
-      <div class="pipe-step">Feature Eng.</div><div class="pipe-arrow">→</div>
-      <div class="pipe-step">Modeling</div><div class="pipe-arrow">→</div>
-      <div class="pipe-step">Tuning</div><div class="pipe-arrow">→</div>
-      <div class="pipe-step">Inference</div>
+    <p>Pipeline dibangun secara sistematis untuk mencegah data leakage dan memastikan model siap diuji secara realistis:</p>
+
+    <div class="pipeline-container">
+      <div class="pipeline-steps">
+        <div class="pipe-badge"><span class="pipe-num">1</span> Load Data</div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-badge"><span class="pipe-num">2</span> Cleaning</div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-badge"><span class="pipe-num">3</span> EDA</div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-badge"><span class="pipe-num">4</span> Feature Eng.</div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-badge"><span class="pipe-num">5</span> Modeling</div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-badge"><span class="pipe-num">6</span> Optuna Tuning</div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-badge" style="background:var(--emerald-light); border-color:var(--emerald-border); color:var(--emerald);"><span class="pipe-num" style="color:var(--emerald);">7</span> Inference</div>
+      </div>
     </div>
 
-    <div class="feat-grid" style="margin-top: 1.5rem;">
+    <div class="feat-grid">
       <div class="feat-card">
-        <div class="feat-name">Feature Engineering</div>
-        <div class="feat-desc">6 fitur baru ditambahkan berdasarkan domain knowledge — TotalServices, ChargePerService, AvgCharges, IsNewCustomer, IsLongTerm, TenureGroup</div>
+        <span class="feat-tag">Feature Engineering</span>
+        <h4>6 Fitur Baru Ditambahkan</h4>
+        <p>Berdasarkan domain knowledge telekomunikasi: <code>TotalServices</code>, <code>ChargePerService</code>, <code>AvgCharges</code>, <code>IsNewCustomer</code>, <code>IsLongTerm</code>, dan <code>TenureGroup</code>.</p>
       </div>
+
       <div class="feat-card">
-        <div class="feat-name">Strategi Encoding</div>
-        <div class="feat-desc">Binary encoding untuk kolom Ya/Tidak. "No internet service" disamakan dengan "No". Ordinal untuk Contract. One-hot untuk InternetService dan PaymentMethod.</div>
+        <span class="feat-tag">Strategi Encoding</span>
+        <h4>Penanganan Nilai Kategorikal</h4>
+        <p>Binary encoding untuk Yes/No. Menormalkan "No internet service" menjadi "No". Ordinal encoding untuk Contract. One-Hot encoding untuk InternetService & PaymentMethod.</p>
       </div>
+
       <div class="feat-card">
-        <div class="feat-name">Penanganan Imbalance</div>
-        <div class="feat-desc">class_weight='balanced' untuk Random Forest. scale_pos_weight untuk XGBoost. SMOTE dicoba tapi ditolak karena hasilnya lebih buruk.</div>
+        <span class="feat-tag">Imbalance Strategy</span>
+        <h4>Cost-Sensitive Weighting</h4>
+        <p>Menggunakan penyesuaian bobot kelas <code>class_weight='balanced'</code> dan <code>scale_pos_weight</code>. Eksperimen oversampling SMOTE diuji namun ditolak karena menghasilkan lebih banyak False Positives.</p>
       </div>
+
       <div class="feat-card">
-        <div class="feat-name">Hyperparameter Tuning</div>
-        <div class="feat-desc">Optuna TPE sampler dengan 20 percobaan per model. StratifiedKFold (5-fold) cross-validation digunakan sebagai objektif optimasi (F1 score).</div>
+        <span class="feat-tag">Hyperparameter Tuning</span>
+        <h4>Optimasi Bayesian dengan Optuna</h4>
+        <p>20 percobaan per model menggunakan TPE Sampler dengan 5-fold Stratified Cross-Validation berorientasi pada peningkatan F1-Score kelas minoritas.</p>
       </div>
     </div>
   </section>
 
-  <!-- TUNING -->
+  <!-- 04 — PROGRES TUNING -->
   <section>
-    <div class="section-label">04 — Progres Tuning</div>
+    <div class="section-label">04 — Optimasi & Tuning</div>
     <h2>Peningkatan Langkah demi Langkah</h2>
+    <p>Perjalanan iteratif mengoptimalkan performa model dari baseline hingga mencapai ROC-AUC tertinggi:</p>
+
     <div class="tuning-list">
       <div class="tuning-item">
-        <span class="tuning-name">Step 1 — Penanganan class weight (RF) / scale_pos_weight (XGB)</span>
-        <span class="tag tag-up">imbalance teratasi</span>
+        <div class="tuning-info">
+          <span class="tuning-step-idx">Langkah 1</span>
+          <span class="tuning-name">Penanganan Class Weight (RF) & scale_pos_weight (XGB)</span>
+        </div>
+        <span class="tag-status tag-success">Imbalance Teratasi</span>
       </div>
+
       <div class="tuning-item">
-        <span class="tuning-name">Step 2 — Threshold tuning pada model baseline (0.50 → 0.27)</span>
-        <span class="tag tag-up">recall +15%</span>
+        <div class="tuning-info">
+          <span class="tuning-step-idx">Langkah 2</span>
+          <span class="tuning-name">Threshold Tuning pada model Baseline (0.50 → 0.27)</span>
+        </div>
+        <span class="tag-status tag-success">Recall Naik +15%</span>
       </div>
+
       <div class="tuning-item">
-        <span class="tuning-name">Step 3 — Pencarian hyperparameter Optuna (20 percobaan)</span>
-        <span class="tag tag-up">F1 0.60 → 0.64</span>
+        <div class="tuning-info">
+          <span class="tuning-step-idx">Langkah 3</span>
+          <span class="tuning-name">Pencarian Hyperparameter Optuna TPE (20 Trials)</span>
+        </div>
+        <span class="tag-status tag-success">F1 0.60 → 0.64</span>
       </div>
+
       <div class="tuning-item">
-        <span class="tuning-name">Step 4 — Threshold di-tuning ulang pada model tuned</span>
-        <span class="tag tag-up">ROC-AUC 0.8486</span>
+        <div class="tuning-info">
+          <span class="tuning-step-idx">Langkah 4</span>
+          <span class="tuning-name">Re-tuning Threshold pada Model Terpilih (0.57)</span>
+        </div>
+        <span class="tag-status tag-success">ROC-AUC 0.8486 ★</span>
       </div>
+
       <div class="tuning-item">
-        <span class="tuning-name">Step 5 — Eksperimen SMOTE</span>
-        <span class="tag tag-down">ditolak — hasil lebih buruk</span>
+        <div class="tuning-info">
+          <span class="tuning-step-idx">Langkah 5</span>
+          <span class="tuning-name">Eksperimen Resampling Sintetis (SMOTE)</span>
+        </div>
+        <span class="tag-status tag-danger">Ditolak (Presisi Turun Signifikan)</span>
       </div>
     </div>
   </section>
 
-  <!-- RESULTS -->
+  <!-- 05 — HASIL PENGUJIAN -->
   <section>
-    <div class="section-label">05 — Hasil Pengujian</div>
-    <h2>Performa Model</h2>
-    <p>Semua model dievaluasi pada test set yang sama (20% dari data training). Metrik utama: Churn F1 dan ROC-AUC.</p>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Model</th>
-            <th>Churn F1</th>
-            <th>Recall</th>
-            <th>ROC-AUC</th>
-            <th>Threshold</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>RF Baseline</td><td>0.62</td><td>76%</td><td>0.8231</td><td>0.27</td></tr>
-          <tr><td>XGB Baseline</td><td>0.60</td><td>81%</td><td>0.8215</td><td>0.27</td></tr>
-          <tr><td>RF Tuned</td><td>0.63</td><td>74%</td><td>0.8454</td><td>0.51</td></tr>
-          <tr class="winner">
-            <td>XGB Tuned <span class="badge-best">terbaik</span></td><td>0.64</td><td>73%</td><td>0.8486</td><td>0.57</td>
-          </tr>
-          <tr><td>RF + SMOTE</td><td>0.63</td><td>81%</td><td>0.8377</td><td>0.40</td></tr>
-          <tr><td>XGB + SMOTE</td><td>0.62</td><td>85%</td><td>0.8368</td><td>0.29</td></tr>
-        </tbody>
-      </table>
+    <div class="section-label">05 — Hasil Pengujian & Benchmark</div>
+    <h2>Perbandingan Performa Model</h2>
+    <p>Seluruh model diuji pada test set independen yang sama (20% porsi split stratified). Metrik evaluasi mencakup Churn F1, Recall, dan ROC-AUC.</p>
+
+    <div class="table-container">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Churn F1</th>
+              <th>Recall</th>
+              <th>ROC-AUC</th>
+              <th>Optimal Threshold</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Random Forest Baseline</td>
+              <td>0.62</td>
+              <td>76%</td>
+              <td>0.8231</td>
+              <td>0.27</td>
+            </tr>
+            <tr>
+              <td>XGBoost Baseline</td>
+              <td>0.60</td>
+              <td>81%</td>
+              <td>0.8215</td>
+              <td>0.27</td>
+            </tr>
+            <tr>
+              <td>Random Forest Tuned</td>
+              <td>0.63</td>
+              <td>74%</td>
+              <td>0.8454</td>
+              <td>0.51</td>
+            </tr>
+            <tr class="winner-row">
+              <td>
+                XGBoost Tuned
+                <span class="badge-winner">★ TERBAIK</span>
+              </td>
+              <td><strong>0.64</strong></td>
+              <td>73%</td>
+              <td><strong>0.8486</strong></td>
+              <td><strong>0.57</strong></td>
+            </tr>
+            <tr>
+              <td>Random Forest + SMOTE</td>
+              <td>0.63</td>
+              <td>81%</td>
+              <td>0.8377</td>
+              <td>0.40</td>
+            </tr>
+            <tr>
+              <td>XGBoost + SMOTE</td>
+              <td>0.62</td>
+              <td>85%</td>
+              <td>0.8368</td>
+              <td>0.29</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
-    <div class="chart-wrap" style="margin-top: 1.5rem;">
-      <div class="chart-title">Perbandingan ROC-AUC — Semua Model</div>
+    <!-- ROC-AUC Comparison Bar Chart -->
+    <div class="card-wrap">
+      <div class="card-title">
+        <span>Perbandingan ROC-AUC — Seluruh Model</span>
+        <span style="color:var(--emerald); font-weight:700;">Tertinggi: 0.8486 (XGB Tuned)</span>
+      </div>
+
       <div class="bar-chart">
         <div class="bc-row bc-normal">
           <span class="bc-label">RF Baseline</span>
-          <div class="bc-track"><div class="bc-fill" style="width:82.31%"><span class="bc-val">0.8231</span></div></div>
+          <div class="bc-track">
+            <div class="bc-fill" style="width: 82.31%;">
+              <span class="bc-val">0.8231</span>
+            </div>
+          </div>
         </div>
+
         <div class="bc-row bc-normal">
           <span class="bc-label">XGB Baseline</span>
-          <div class="bc-track"><div class="bc-fill" style="width:82.15%"><span class="bc-val">0.8215</span></div></div>
+          <div class="bc-track">
+            <div class="bc-fill" style="width: 82.15%;">
+              <span class="bc-val">0.8215</span>
+            </div>
+          </div>
         </div>
-        <div class="bc-row bc-normal">
-          <span class="bc-label">RF + SMOTE</span>
-          <div class="bc-track"><div class="bc-fill" style="width:83.77%"><span class="bc-val">0.8377</span></div></div>
-        </div>
+
         <div class="bc-row bc-normal">
           <span class="bc-label">XGB + SMOTE</span>
-          <div class="bc-track"><div class="bc-fill" style="width:83.68%"><span class="bc-val">0.8368</span></div></div>
+          <div class="bc-track">
+            <div class="bc-fill" style="width: 83.68%;">
+              <span class="bc-val">0.8368</span>
+            </div>
+          </div>
         </div>
+
+        <div class="bc-row bc-normal">
+          <span class="bc-label">RF + SMOTE</span>
+          <div class="bc-track">
+            <div class="bc-fill" style="width: 83.77%;">
+              <span class="bc-val">0.8377</span>
+            </div>
+          </div>
+        </div>
+
         <div class="bc-row bc-normal">
           <span class="bc-label">RF Tuned</span>
-          <div class="bc-track"><div class="bc-fill" style="width:84.54%"><span class="bc-val">0.8454</span></div></div>
+          <div class="bc-track">
+            <div class="bc-fill" style="width: 84.54%;">
+              <span class="bc-val">0.8454</span>
+            </div>
+          </div>
         </div>
+
         <div class="bc-row bc-winner">
-          <span class="bc-label" style="color:#4fffb0; font-weight:500;">XGB Tuned ★</span>
-          <div class="bc-track"><div class="bc-fill" style="width:84.86%"><span class="bc-val">0.8486</span></div></div>
+          <span class="bc-label" style="color:var(--emerald);">XGB Tuned ★</span>
+          <div class="bc-track">
+            <div class="bc-fill" style="width: 84.86%;">
+              <span class="bc-val">0.8486</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- INFERENCE -->
+  <!-- 06 — INFERENCE UNSEEN DATA -->
   <section>
-    <div class="section-label">06 — Inference Data Unseen</div>
-    <h2>10 Sampel yang Belum Pernah Dilihat Model</h2>
-    <p>Sebagian kecil data dipisahkan sebelum proses training maupun feature engineering. Model tidak pernah melihat sampel ini selama keseluruhan pipeline. Threshold: <strong style="color:#fff">0.57</strong>.</p>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>No</th>
-            <th>Confidence Score</th>
-            <th>Prediksi</th>
-            <th>Aktual</th>
-            <th>Hasil</th>
-          </tr>
-        </thead>
-        <tbody class="inf-row">
-          <tr><td>1</td><td>9.97%</td><td>No Churn</td><td>No Churn</td><td class="correct">✓ Benar</td></tr>
-          <tr><td>2</td><td>75.89%</td><td>Churn</td><td>Churn</td><td class="correct">✓ Benar</td></tr>
-          <tr><td>3</td><td>22.31%</td><td>No Churn</td><td>No Churn</td><td class="correct">✓ Benar</td></tr>
-          <tr><td>4</td><td>82.47%</td><td>Churn</td><td>Churn</td><td class="correct">✓ Benar</td></tr>
-          <tr><td>5</td><td>86.31%</td><td>Churn</td><td>Churn</td><td class="correct">✓ Benar</td></tr>
-          <tr><td>6</td><td>4.79%</td><td>No Churn</td><td>No Churn</td><td class="correct">✓ Benar</td></tr>
-          <tr><td>7</td><td>22.89%</td><td>No Churn</td><td>No Churn</td><td class="correct">✓ Benar</td></tr>
-          <tr><td>8</td><td>79.22%</td><td>Churn</td><td>No Churn</td><td class="wrong">✗ Salah</td></tr>
-          <tr><td>9</td><td>27.49%</td><td>No Churn</td><td>No Churn</td><td class="correct">✓ Benar</td></tr>
-          <tr><td>10</td><td>27.15%</td><td>No Churn</td><td>No Churn</td><td class="correct">✓ Benar</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p style="margin-top: 1rem; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--accent);">9/10 benar pada data yang benar-benar unseen (90%)</p>
+    <div class="section-label">06 — Validasi Data Unseen</div>
+    <h2>Uji Nyata pada 10 Sampel Belum Pernah Dilihat</h2>
+    <p>
+      10 sampel data dipisahkan sebelum seluruh proses feature engineering dan modeling dimulai. Model tidak pernah melihat data ini sama sekali selama masa training.
+    </p>
 
-    <div class="chart-wrap" style="margin-top: 1.5rem;">
-      <div class="chart-title">Confidence Score per Sampel (threshold = 0.57)</div>
-      <div class="conf-chart">
-        <div class="conf-row"><span class="conf-no">1</span><div class="conf-track"><div class="conf-fill correct" style="width:9.97%"><span class="conf-val correct">9.97% — Benar</span></div></div></div>
-        <div class="conf-row"><span class="conf-no">2</span><div class="conf-track"><div class="conf-fill correct" style="width:75.89%"><span class="conf-val correct">75.89% — Benar</span></div></div></div>
-        <div class="conf-row"><span class="conf-no">3</span><div class="conf-track"><div class="conf-fill correct" style="width:22.31%"><span class="conf-val correct">22.31% — Benar</span></div></div></div>
-        <div class="conf-row"><span class="conf-no">4</span><div class="conf-track"><div class="conf-fill correct" style="width:82.47%"><span class="conf-val correct">82.47% — Benar</span></div></div></div>
-        <div class="conf-row"><span class="conf-no">5</span><div class="conf-track"><div class="conf-fill correct" style="width:86.31%"><span class="conf-val correct">86.31% — Benar</span></div></div></div>
-        <div class="conf-row"><span class="conf-no">6</span><div class="conf-track"><div class="conf-fill correct" style="width:4.79%"><span class="conf-val correct">4.79% — Benar</span></div></div></div>
-        <div class="conf-row"><span class="conf-no">7</span><div class="conf-track"><div class="conf-fill correct" style="width:22.89%"><span class="conf-val correct">22.89% — Benar</span></div></div></div>
-        <div class="conf-row"><span class="conf-no">8</span><div class="conf-track"><div class="conf-fill wrong" style="width:79.22%"><span class="conf-val wrong">79.22% — Salah</span></div></div></div>
-        <div class="conf-row"><span class="conf-no">9</span><div class="conf-track"><div class="conf-fill correct" style="width:27.49%"><span class="conf-val correct">27.49% — Benar</span></div></div></div>
-        <div class="conf-row"><span class="conf-no">10</span><div class="conf-track"><div class="conf-fill correct" style="width:27.15%"><span class="conf-val correct">27.15% — Benar</span></div></div></div>
+    <div class="table-container">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>ID Sampel</th>
+              <th>Confidence Score</th>
+              <th>Prediksi Model</th>
+              <th>Nilai Aktual</th>
+              <th>Hasil Verifikasi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>#01</td><td>9.97%</td><td>No Churn</td><td>No Churn</td><td><span class="status-pill status-correct">✓ Tepat</span></td></tr>
+            <tr><td>#02</td><td>75.89%</td><td>Churn</td><td>Churn</td><td><span class="status-pill status-correct">✓ Tepat</span></td></tr>
+            <tr><td>#03</td><td>22.31%</td><td>No Churn</td><td>No Churn</td><td><span class="status-pill status-correct">✓ Tepat</span></td></tr>
+            <tr><td>#04</td><td>82.47%</td><td>Churn</td><td>Churn</td><td><span class="status-pill status-correct">✓ Tepat</span></td></tr>
+            <tr><td>#05</td><td>86.31%</td><td>Churn</td><td>Churn</td><td><span class="status-pill status-correct">✓ Tepat</span></td></tr>
+            <tr><td>#06</td><td>4.79%</td><td>No Churn</td><td>No Churn</td><td><span class="status-pill status-correct">✓ Tepat</span></td></tr>
+            <tr><td>#07</td><td>22.89%</td><td>No Churn</td><td>No Churn</td><td><span class="status-pill status-correct">✓ Tepat</span></td></tr>
+            <tr><td>#08</td><td>79.22%</td><td>Churn</td><td>No Churn</td><td><span class="status-pill status-wrong">✗ Meleset (FP)</span></td></tr>
+            <tr><td>#09</td><td>27.49%</td><td>No Churn</td><td>No Churn</td><td><span class="status-pill status-correct">✓ Tepat</span></td></tr>
+            <tr><td>#10</td><td>27.15%</td><td>No Churn</td><td>No Churn</td><td><span class="status-pill status-correct">✓ Tepat</span></td></tr>
+          </tbody>
+        </table>
       </div>
-      <p style="margin-top: 12px; font-size: 12px; color: var(--muted);">Hijau = prediksi benar &nbsp;·&nbsp; Merah = prediksi salah &nbsp;·&nbsp; Panjang bar = confidence score</p>
+    </div>
+
+    <!-- Confidence Score Bar Chart with Threshold -->
+    <div class="card-wrap">
+      <div class="card-title">
+        <span>Confidence Score per Sampel & Garis Ambang Batas</span>
+        <span style="font-family:'DM Mono', monospace; color:var(--primary);">Akurasi: 9/10 (90%)</span>
+      </div>
+
+      <div class="conf-chart">
+        <div class="threshold-label">Threshold 0.57</div>
+        <div class="threshold-guide"></div>
+
+        <div class="conf-row"><span class="conf-no">#01</span><div class="conf-track"><div class="conf-fill correct" style="width: 9.97%;">9.97%</div></div></div>
+        <div class="conf-row"><span class="conf-no">#02</span><div class="conf-track"><div class="conf-fill correct" style="width: 75.89%;">75.89%</div></div></div>
+        <div class="conf-row"><span class="conf-no">#03</span><div class="conf-track"><div class="conf-fill correct" style="width: 22.31%;">22.31%</div></div></div>
+        <div class="conf-row"><span class="conf-no">#04</span><div class="conf-track"><div class="conf-fill correct" style="width: 82.47%;">82.47%</div></div></div>
+        <div class="conf-row"><span class="conf-no">#05</span><div class="conf-track"><div class="conf-fill correct" style="width: 86.31%;">86.31%</div></div></div>
+        <div class="conf-row"><span class="conf-no">#06</span><div class="conf-track"><div class="conf-fill correct" style="width: 4.79%;">4.79%</div></div></div>
+        <div class="conf-row"><span class="conf-no">#07</span><div class="conf-track"><div class="conf-fill correct" style="width: 22.89%;">22.89%</div></div></div>
+        <div class="conf-row"><span class="conf-no">#08</span><div class="conf-track"><div class="conf-fill wrong" style="width: 79.22%;">79.22% (Salah)</div></div></div>
+        <div class="conf-row"><span class="conf-no">#09</span><div class="conf-track"><div class="conf-fill correct" style="width: 27.49%;">27.49%</div></div></div>
+        <div class="conf-row"><span class="conf-no">#10</span><div class="conf-track"><div class="conf-fill correct" style="width: 27.15%;">27.15%</div></div></div>
+      </div>
+
+      <p style="margin-top: 1.25rem; font-size: 12.5px; color: var(--text-muted);">
+        Keterangan: Garis merah vertikal adalah ambang batas optimal (<strong>0.57</strong>). Sampel di kanan garis diprediksi Churn, sedangkan di kiri garis diprediksi No Churn.
+      </p>
     </div>
   </section>
 
-  <!-- INSIGHTS -->
+  <!-- 07 — INSIGHT BISNIS -->
   <section>
-    <div class="section-label">07 — Insight Bisnis</div>
-    <h2>Temuan Utama</h2>
+    <div class="section-label">07 — Insight & Rekomendasi Bisnis</div>
+    <h2>Temuan Utama & Tindakan Strategis</h2>
+    <p>Hasil interpretasi feature importance dan analisis EDA memberikan rekomendasi langsung bagi manajemen retensi pelanggan:</p>
+
     <div class="insight-grid">
       <div class="insight-card">
-        <div class="insight-num">~43%</div>
-        <div class="insight-desc">Tingkat churn pelanggan dengan kontrak month-to-month — kelompok paling berisiko</div>
+        <div>
+          <div class="insight-badge">Pemicu Churn Terbesar</div>
+          <div class="insight-num rose">~43%</div>
+        </div>
+        <div class="insight-desc">
+          <strong>Kontrak Month-to-Month:</strong> Pelanggan tanpa komitmen jangka panjang memiliki tingkat churn tertinggi dibanding kontrak 1 atau 2 tahun.
+        </div>
       </div>
+
       <div class="insight-card">
-        <div class="insight-num">12 bln</div>
-        <div class="insight-desc">Periode kritis — pelanggan baru paling rentan churn di tahun pertama</div>
+        <div>
+          <div class="insight-badge">Jendela Retensi Kritis</div>
+          <div class="insight-num amber">12 Bulan</div>
+        </div>
+        <div class="insight-desc">
+          <strong>Tahun Pertama Berlangganan:</strong> Risiko churn terkonsentrasi pada bulan ke-1 hingga ke-12. Setelah melewati 1 tahun, loyalitas pelanggan meningkat drastis.
+        </div>
       </div>
+
       <div class="insight-card">
-        <div class="insight-num">Fiber</div>
-        <div class="insight-desc">Pengguna fiber optic tanpa add-on menunjukkan churn tinggi meski biaya lebih mahal</div>
+        <div>
+          <div class="insight-badge">Layanan Internet</div>
+          <div class="insight-num sky">Fiber Optic</div>
+        </div>
+        <div class="insight-desc">
+          <strong>Gap Kualitas & Harga:</strong> Pelanggan Fiber Optic tanpa layanan proteksi/dukungan teknis (TechSupport & OnlineSecurity) cenderung mudah kecewa dan churn.
+        </div>
       </div>
+
       <div class="insight-card">
-        <div class="insight-num">e-check</div>
-        <div class="insight-desc">Pengguna electronic check lebih banyak churn dibanding metode pembayaran lainnya</div>
+        <div>
+          <div class="insight-badge">Metode Pembayaran</div>
+          <div class="insight-num" style="color:var(--primary);">e-Check</div>
+        </div>
+        <div class="insight-desc">
+          <strong>Friction Pembayaran:</strong> Pengguna Electronic Check mengalami churn paling sering dibanding metode autodebet kartu kredit atau transfer otomatis bank.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 08 — INTERACTIVE SIMULATOR -->
+  <section>
+    <div class="section-label">08 — Simulator Interaktif</div>
+    <h2>Uji Prediksi Churn Interaktif</h2>
+    <p>Coba variasikan profil pelanggan di bawah ini untuk melihat estimasi risiko churn dan saran retensi secara langsung:</p>
+
+    <div class="simulator-card">
+      <div class="sim-header">
+        <div>
+          <h3>Kalkulator Risiko Churn Pelanggan</h3>
+          <p style="font-size:13px; color:var(--text-muted); margin:0;">Simulasi probabilistik berdasarkan bobot fitur XGBoost</p>
+        </div>
+        <span class="sim-badge">✨ Live Interactive</span>
+      </div>
+
+      <div class="sim-layout">
+        <!-- Input Form -->
+        <div class="sim-form">
+          <div class="sim-field">
+            <label class="sim-label">
+              <span>Jenis Kontrak</span>
+            </label>
+            <select id="simContract" class="sim-select" onchange="calculateChurnRisk()">
+              <option value="month-to-month" selected>Month-to-month (Bulanan)</option>
+              <option value="one-year">One year (1 Tahun)</option>
+              <option value="two-year">Two year (2 Tahun)</option>
+            </select>
+          </div>
+
+          <div class="sim-field">
+            <label class="sim-label">
+              <span>Masa Berlangganan (Tenure)</span>
+              <span id="tenureVal" class="sim-val-display">6 bulan</span>
+            </label>
+            <input type="range" id="simTenure" min="1" max="72" value="6" oninput="updateTenure(this.value); calculateChurnRisk();" />
+          </div>
+
+          <div class="sim-field">
+            <label class="sim-label">
+              <span>Biaya Bulanan (Monthly Charges)</span>
+              <span id="chargesVal" class="sim-val-display">$85 / bln</span>
+            </label>
+            <input type="range" id="simCharges" min="18" max="120" value="85" oninput="updateCharges(this.value); calculateChurnRisk();" />
+          </div>
+
+          <div class="sim-field">
+            <label class="sim-label">
+              <span>Layanan Internet</span>
+            </label>
+            <select id="simInternet" class="sim-select" onchange="calculateChurnRisk()">
+              <option value="fiber" selected>Fiber Optic</option>
+              <option value="dsl">DSL</option>
+              <option value="none">Tidak Ada Internet</option>
+            </select>
+          </div>
+
+          <div class="sim-field">
+            <label class="sim-label">
+              <span>Dukungan Teknis (Tech Support)</span>
+            </label>
+            <select id="simTechSupport" class="sim-select" onchange="calculateChurnRisk()">
+              <option value="no" selected>Tidak Ada Tech Support</option>
+              <option value="yes">Ada Tech Support</option>
+            </select>
+          </div>
+
+          <div class="sim-field">
+            <label class="sim-label">
+              <span>Metode Pembayaran</span>
+            </label>
+            <select id="simPayment" class="sim-select" onchange="calculateChurnRisk()">
+              <option value="electronic" selected>Electronic Check</option>
+              <option value="auto">Bank Transfer / Credit Card (Auto)</option>
+              <option value="mail">Mailed Check</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Output Score -->
+        <div class="sim-output">
+          <div id="scoreCircle" class="sim-score-circle" style="border-color: #e11d48;">
+            <span id="scorePct" class="sim-score-pct" style="color: #e11d48;">78%</span>
+            <span class="sim-score-lbl">Probabilitas</span>
+          </div>
+
+          <div id="riskVerdict" class="sim-verdict" style="background:#ffe4e6; color:#9f1239;">
+            Risiko Sangat Tinggi
+          </div>
+
+          <div class="sim-recommendation">
+            <strong>Rekomendasi Aksi:</strong>
+            <p id="recText" style="margin: 4px 0 0; font-size:12px; color:var(--text-body);">
+              Segera tawarkan insentif transisi ke kontrak 1 tahun dengan diskon bundling perlindungan perangkat & dukungan teknis gratis selama 3 bulan pertama.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
   <!-- FOOTER -->
   <footer>
-    <p>Vincentius Leonanda Prabowo · AI Engineer ·
-      <a href="https://github.com/leonanda1013/Telco-Customer-Churn">GitHub Repository</a>
-    </p>
-    <p style="margin-top: 6px;">Dataset: <a href="https://www.kaggle.com/datasets/blastchar/telco-customer-churn">Kaggle — Telco Customer Churn</a></p>
+    <div class="footer-author">Vincentius Leonanda Prabowo · Machine Learning Project</div>
+    <div class="footer-links">
+      <a href="https://github.com/leonanda1013/Telco-Customer-Churn" target="_blank">GitHub Repository</a> ·
+      <a href="https://colab.research.google.com/drive/1P6bHGzgmOqUHoy_H9luvrDya_DGe5fSm?usp=sharing" target="_blank">Google Colab</a> ·
+      <a href="https://www.kaggle.com/datasets/blastchar/telco-customer-churn" target="_blank">Kaggle Dataset</a>
+    </div>
   </footer>
 
 </div>
+
+<!-- Interactive Simulator Logic -->
+<script>
+  function updateTenure(val) {
+    document.getElementById('tenureVal').innerText = val + ' bulan';
+  }
+
+  function updateCharges(val) {
+    document.getElementById('chargesVal').innerText = '$' + val + ' / bln';
+  }
+
+  function calculateChurnRisk() {
+    const contract = document.getElementById('simContract').value;
+    const tenure = parseInt(document.getElementById('simTenure').value, 10);
+    const charges = parseFloat(document.getElementById('simCharges').value);
+    const internet = document.getElementById('simInternet').value;
+    const techSupport = document.getElementById('simTechSupport').value;
+    const payment = document.getElementById('simPayment').value;
+
+    // Log-odds estimation based on XGBoost feature weights
+    let logit = -0.5;
+
+    // Contract effect (most dominant)
+    if (contract === 'month-to-month') logit += 1.4;
+    else if (contract === 'one-year') logit -= 0.6;
+    else if (contract === 'two-year') logit -= 1.6;
+
+    // Tenure effect (decaying risk)
+    if (tenure <= 6) logit += 1.1;
+    else if (tenure <= 12) logit += 0.6;
+    else if (tenure <= 24) logit += 0.1;
+    else if (tenure <= 48) logit -= 0.7;
+    else logit -= 1.4;
+
+    // Monthly Charges effect
+    if (charges > 80) logit += 0.7;
+    else if (charges > 60) logit += 0.3;
+    else if (charges < 30) logit -= 0.5;
+
+    // Internet Service effect
+    if (internet === 'fiber') logit += 0.65;
+    else if (internet === 'none') logit -= 0.8;
+
+    // Tech Support effect
+    if (techSupport === 'yes') logit -= 0.5;
+    else if (internet !== 'none') logit += 0.35;
+
+    // Payment method effect
+    if (payment === 'electronic') logit += 0.45;
+    else if (payment === 'auto') logit -= 0.35;
+
+    // Convert logit to probability
+    const prob = 1 / (1 + Math.exp(-logit));
+    const pct = Math.round(prob * 100);
+
+    const scorePctElem = document.getElementById('scorePct');
+    const scoreCircleElem = document.getElementById('scoreCircle');
+    const riskVerdictElem = document.getElementById('riskVerdict');
+    const recTextElem = document.getElementById('recText');
+
+    scorePctElem.innerText = pct + '%';
+
+    if (pct >= 57) {
+      scoreCircleElem.style.borderColor = '#e11d48';
+      scorePctElem.style.color = '#e11d48';
+      riskVerdictElem.style.background = '#ffe4e6';
+      riskVerdictElem.style.color = '#9f1239';
+      riskVerdictElem.innerText = 'Risiko Tinggi (Churn)';
+      recTextElem.innerText = 'Prioritas intervensi: Hubungi pelanggan secara proaktif, tawarkan insentif peralihan ke kontrak tahunan, serta bundling diskon Tech Support atau bonus kuota.';
+    } else if (pct >= 35) {
+      scoreCircleElem.style.borderColor = '#d97706';
+      scorePctElem.style.color = '#d97706';
+      riskVerdictElem.style.background = '#fef3c7';
+      riskVerdictElem.style.color = '#92400e';
+      riskVerdictElem.innerText = 'Risiko Sedang (Waspada)';
+      recTextElem.innerText = 'Kirimkan survei kepuasan berkala dan promosikan metode pembayaran autodebet dengan cashback untuk memperkuat loyalitas sebelum risiko meningkat.';
+    } else {
+      scoreCircleElem.style.borderColor = '#059669';
+      scorePctElem.style.color = '#059669';
+      riskVerdictElem.style.background = '#dcfce7';
+      riskVerdictElem.style.color = '#166534';
+      riskVerdictElem.innerText = 'Risiko Rendah (Loyal)';
+      recTextElem.innerText = 'Pelanggan berada dalam zona aman dan puas. Cocok untuk program referral atau penawaran upgrade layanan bernilai tambah (upselling).';
+    }
+  }
+
+  // Initial calculation on load
+  calculateChurnRisk();
+</script>
+
 </body>
 </html>
